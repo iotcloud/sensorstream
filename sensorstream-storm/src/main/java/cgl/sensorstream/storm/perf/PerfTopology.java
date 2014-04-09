@@ -45,6 +45,8 @@ public class PerfTopology {
             }
         });
 
+        spout.setJmsAcknowledgeMode(Session.AUTO_ACKNOWLEDGE);
+
         builder.setSpout("word", spout, 4);
         builder.setBolt("time1", new PerfAggrBolt(), 4).shuffleGrouping("word");
 
