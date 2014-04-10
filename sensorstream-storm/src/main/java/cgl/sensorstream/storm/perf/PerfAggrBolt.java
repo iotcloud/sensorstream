@@ -20,6 +20,8 @@ public class PerfAggrBolt extends BaseRichBolt {
 
     long count = 0;
 
+    long initTime = 0;
+
     @Override
     public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
         _collector = collector;
@@ -28,13 +30,20 @@ public class PerfAggrBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple tuple) {
         Long val = (Long) tuple.getValue(0);
-        count++;
-        double delta = val - averageLatency;
-        averageLatency = averageLatency + delta / count;
-        _collector.emit(new Values(averageLatency));
+        if (initTime == 0) {
+            initTime = System.currentTimeMillis();
+        }
+        // don't count the values in the first 5 secs
+        if (System.currentTimeMillis() - initTime > 5000) {
+            count++;
+            double delta = val - averageLatency;
+            averageLatency = averageLatency + delta / count;
+            _collector.emit(new Values(averageLatency));
 
-        LOG.info("The latency: " + averageLatency + " count: " + count + " val: " + val);
+            LOG.info("The latency: " + averageLatency + " count: " + count + " val: " + val);
+        }
         _collector.ack(tuple);
+
     }
 
     @Override
