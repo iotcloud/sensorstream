@@ -36,9 +36,14 @@ public class PerfAggrBolt extends BaseRichBolt {
         // don't count the values in the first 5 secs
         if (System.currentTimeMillis() - initTime > 5000) {
             count++;
-            double delta = val - averageLatency;
-            averageLatency = averageLatency + delta / count;
-            _collector.emit(new Values(averageLatency));
+            if (val < 0) {
+                averageLatency = 0;
+                count = 0;
+            } else {
+                double delta = val - averageLatency;
+                averageLatency = averageLatency + delta / count;
+                _collector.emit(new Values(averageLatency));
+            }
 
             LOG.info("The latency: " + averageLatency + " count: " + count + " val: " + val);
         }
