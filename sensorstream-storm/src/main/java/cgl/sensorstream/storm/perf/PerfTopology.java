@@ -54,7 +54,7 @@ public class PerfTopology {
         conf.setDebug(true);
 
 //        if (args != null && args.length > 0) {
-        conf.setNumWorkers(6);
+        conf.setNumWorkers(8);
         StormSubmitter.submitTopology(args[0], conf, builder.createTopology());
 //        } else {
 //            LocalCluster cluster = new LocalCluster();
