@@ -17,7 +17,7 @@ public class RPerfTopology {
         TopologyBuilder builder = new TopologyBuilder();
 
         RabbitMQSpout spout = new RabbitMQSpout(new RMessageScheme(new RScheme(), "e", "p"));
-        builder.setSpout("word", spout, 2);
+        builder.setSpout("word", spout, 1);
         builder.setBolt("time1", new PerfAggrBolt(), 2).shuffleGrouping("word");
 
         Config conf = new Config();
