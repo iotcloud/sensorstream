@@ -8,6 +8,7 @@ import cgl.iotcloud.core.sensorsite.SiteContext;
 import cgl.iotcloud.core.transport.Channel;
 import cgl.iotcloud.core.transport.Direction;
 import cgl.iotcloud.core.transport.MessageConverter;
+import org.apache.commons.cli.*;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,7 @@ public class RMQPerfSensor extends AbstractSensor {
     public static final String FILE_NAME = "file_name";
 
     private static Logger LOG = LoggerFactory.getLogger(RMQPerfSensor.class);
+
     @Override
     public Configurator getConfigurator(Map conf) {
         return new RabbitConfigurator();
@@ -41,12 +43,10 @@ public class RMQPerfSensor extends AbstractSensor {
         if (intervalProp != null && intervalProp instanceof Integer) {
             interval = (Integer) intervalProp;
         }
+        String fileName = context.getProperty(FILE_NAME).toString();
 
         final Channel sendChannel = context.getChannel("rabbitmq", "sender");
         final Channel receiveChannel = context.getChannel("rabbitmq", "receiver");
-
-        String fileName = context.getProperty(FILE_NAME).toString();
-
         final String content;
         try {
             content = readEntireFile(fileName);
@@ -113,16 +113,15 @@ public class RMQPerfSensor extends AbstractSensor {
     }
 
     private class ByteToTextConverter implements MessageConverter {
-        @Override
         public Object convert(Object input, Object context) {
             if (input instanceof byte[]) {
                 ByteArrayInputStream in = new ByteArrayInputStream((byte[]) input);
-                ObjectInputStream is = null;
+                ObjectInputStream is;
                 try {
                     is = new ObjectInputStream(in);
                     return is.readObject();
                 } catch (Exception e) {
-                    LOG.error("E");
+                    LOG.error("Error occurred while converting byte to text", e);
                 }
             }
             return null;
@@ -130,7 +129,6 @@ public class RMQPerfSensor extends AbstractSensor {
     }
 
     private class TextToByteConverter implements MessageConverter {
-
         @Override
         public Object convert(Object input, Object context) {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -140,7 +138,7 @@ public class RMQPerfSensor extends AbstractSensor {
                 out.writeObject(input);
                 return bos.toByteArray();
             } catch (IOException e) {
-                LOG.error("Error", e);
+                LOG.error("Error occurred while converting text to byte", e);
             } finally {
                 try {
                     if (out != null) {
@@ -180,16 +178,36 @@ public class RMQPerfSensor extends AbstractSensor {
         SensorClient client;
         try {
             client = new SensorClient(conf);
+            SensorDeployDescriptor deployDescriptor = new SensorDeployDescriptor("sensors-1.0-SNAPSHOT.jar",
+                    "cgl.sensorstream.sensors.rabbitmq.RMQPerfSensor");
+            parseArgs(args, deployDescriptor);
 
             List<String> sites = new ArrayList<String>();
-            sites.add("local");
-
-            SensorDeployDescriptor deployDescriptor = new SensorDeployDescriptor("iotcloud-examples-1.0-SNAPSHOT.jar", "cgl.iotcloud.examples.chat.RabbitMQSensor");
+            sites.add("local-1");
+            sites.add("local-2");
             deployDescriptor.addDeploySites(sites);
 
             client.deploySensor(deployDescriptor);
         } catch (TTransportException e) {
             e.printStackTrace();
+        }
+    }
+
+    public static void parseArgs(String []args, SensorDeployDescriptor descriptor) {
+        Options options = new Options();
+        options.addOption("t", true, "Time interval");
+        options.addOption("f", true, "File name");
+
+        CommandLineParser commandLineParser = new BasicParser();
+        try {
+            CommandLine cmd = commandLineParser.parse(options, args);
+
+            String timeString = cmd.getOptionValue("t", "100");
+            String fileName = cmd.getOptionValue("f");
+            descriptor.addProperty(SEND_INTERVAL, timeString);
+            descriptor.addProperty(FILE_NAME, fileName);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
         }
     }
 
