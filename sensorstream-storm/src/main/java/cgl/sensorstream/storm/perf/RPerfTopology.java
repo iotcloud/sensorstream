@@ -42,7 +42,7 @@ public class RPerfTopology {
         @Override
         public List<Object> deserialize(byte[] bytes) {
             return null;
-        }
+        }   
 
         @Override
         public Fields getOutputFields() {

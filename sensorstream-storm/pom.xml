@@ -98,5 +98,9 @@
             <artifactId>storm-rabbitmq</artifactId>
             <version>0.5.9</version>
         </dependency>
+        <dependency>
+            <groupId>storm-bcs</groupId>
+            <artifactId>storm-rabbitmq</artifactId>
+        </dependency>
     </dependencies>
 </project>

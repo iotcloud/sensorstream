@@ -162,16 +162,6 @@ public class RMQPerfSensor extends AbstractSensor {
 
     }
 
-    @Override
-    public void activate() {
-
-    }
-
-    @Override
-    public void deactivate() {
-
-    }
-
     public static void main(String[] args) {
         // read the configuration file
         Map conf = Utils.readConfig();
