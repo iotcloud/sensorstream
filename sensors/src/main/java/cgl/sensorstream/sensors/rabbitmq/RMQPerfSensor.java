@@ -31,6 +31,8 @@ public class RMQPerfSensor extends AbstractSensor {
 
     private static Logger LOG = LoggerFactory.getLogger(RMQPerfSensor.class);
 
+    private SensorContext context;
+
     @Override
     public Configurator getConfigurator(Map conf) {
         return new RabbitConfigurator();
@@ -38,6 +40,8 @@ public class RMQPerfSensor extends AbstractSensor {
 
     @Override
     public void open(SensorContext context) {
+        this.context = context;
+
         Object intervalProp = context.getProperty(SEND_INTERVAL);
         int interval = 100;
         if (intervalProp != null && intervalProp instanceof Integer) {
@@ -62,9 +66,9 @@ public class RMQPerfSensor extends AbstractSensor {
                 try {
                     queue.put(new SensorTextMessage(content));
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    LOG.error("Error", e);
                 }
-                return false;
+                return true;
             }
         }, interval);
 
@@ -78,6 +82,8 @@ public class RMQPerfSensor extends AbstractSensor {
                 }
             }
         });
+
+        LOG.info("Received open request {}", this.context.getId());
     }
 
     private class RabbitConfigurator extends AbstractConfigurator {
@@ -159,7 +165,13 @@ public class RMQPerfSensor extends AbstractSensor {
 
     @Override
     public void close() {
-
+        if (context != null) {
+            for (List<Channel> cs : context.getChannels().values()) {
+                for (Channel c : cs) {
+                    c.close();
+                }
+            }
+        }
     }
 
     public static void main(String[] args) {
