@@ -60,7 +60,7 @@ public class RMQPerfSensor extends AbstractSensor {
             throw new RuntimeException(s, e);
         }
 
-        startChannel(sendChannel, new MessageSender() {
+        startSend(sendChannel, new MessageSender() {
             @Override
             public boolean loop(BlockingQueue queue) {
                 try {
