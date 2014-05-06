@@ -63,7 +63,7 @@ public class JMSPerfSensor extends AbstractSensor {
             throw new RuntimeException(s, e);
         }
 
-        startChannel(sendChannel, new MessageSender() {
+        startSend(sendChannel, new MessageSender() {
             @Override
             public boolean loop(BlockingQueue queue) {
                 try {
@@ -75,7 +75,7 @@ public class JMSPerfSensor extends AbstractSensor {
             }
         }, interval);
 
-        startChannel(receiveChannel, new MessageReceiver() {
+        startListen(receiveChannel, new MessageReceiver() {
             @Override
             public void onMessage(Object message) {
                 if (message instanceof SensorTextMessage) {

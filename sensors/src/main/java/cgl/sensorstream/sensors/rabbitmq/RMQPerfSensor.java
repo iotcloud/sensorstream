@@ -8,6 +8,8 @@ import cgl.iotcloud.core.sensorsite.SiteContext;
 import cgl.iotcloud.core.transport.Channel;
 import cgl.iotcloud.core.transport.Direction;
 import cgl.iotcloud.core.transport.MessageConverter;
+import cgl.iotcloud.transport.rabbitmq.RabbitMQMessage;
+import com.rabbitmq.client.AMQP;
 import org.apache.commons.cli.*;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
@@ -64,7 +66,7 @@ public class RMQPerfSensor extends AbstractSensor {
             @Override
             public boolean loop(BlockingQueue queue) {
                 try {
-                    queue.put(new SensorTextMessage(content));
+                    queue.put(new FileContentMessage(content.getBytes()));
                 } catch (InterruptedException e) {
                     LOG.error("Error", e);
                 }
@@ -105,11 +107,11 @@ public class RMQPerfSensor extends AbstractSensor {
             sendProps.put("exchange", exchange);
             sendProps.put("routingKey", routingKey);
             sendProps.put("queueName", sendQueue);
-            Channel sendChannel = createChannel("sender", sendProps, Direction.OUT, 1024, new TextToByteConverter());
+            Channel sendChannel = createChannel("sender", sendProps, Direction.OUT, 1024, new FileContentToRabbitMessageConverter());
 
-            Map receiveProps = new HashMap();
-            receiveProps.put("queueName", recvQueue);
-            Channel receiveChannel = createChannel("receiver", receiveProps, Direction.IN, 1024, new ByteToTextConverter());
+//            Map receiveProps = new HashMap();
+//            receiveProps.put("queueName", recvQueue);
+//            Channel receiveChannel = createChannel("receiver", receiveProps, Direction.IN, 1024, new ByteToTextConverter());
 
             context.addChannel("rabbitmq", sendChannel);
             // context.addChannel("rabbitmq", receiveChannel);
@@ -118,46 +120,27 @@ public class RMQPerfSensor extends AbstractSensor {
         }
     }
 
-    private class ByteToTextConverter implements MessageConverter {
-        public Object convert(Object input, Object context) {
-            if (input instanceof byte[]) {
-                ByteArrayInputStream in = new ByteArrayInputStream((byte[]) input);
-                ObjectInputStream is;
-                try {
-                    is = new ObjectInputStream(in);
-                    return is.readObject();
-                } catch (Exception e) {
-                    LOG.error("Error occurred while converting byte to text", e);
-                }
-            }
-            return null;
+    private class FileContentMessage {
+        private byte []content;
+
+        private FileContentMessage(byte[] content) {
+            this.content = content;
+        }
+
+        public byte[] getContent() {
+            return content;
         }
     }
 
-    private class TextToByteConverter implements MessageConverter {
+    private class FileContentToRabbitMessageConverter implements MessageConverter {
         @Override
         public Object convert(Object input, Object context) {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ObjectOutput out = null;
-            try {
-                out = new ObjectOutputStream(bos);
-                out.writeObject(input);
-                return bos.toByteArray();
-            } catch (IOException e) {
-                LOG.error("Error occurred while converting text to byte", e);
-            } finally {
-                try {
-                    if (out != null) {
-                        out.close();
-                    }
-                } catch (IOException ignore) {
-                    // ignore close exception
-                }
-                try {
-                    bos.close();
-                } catch (IOException ignore) {
-                    // ignore close exception
-                }
+            if (input instanceof FileContentMessage) {
+                Map<String, Object> headers = new HashMap<String, Object>();
+                headers.put("time", System.currentTimeMillis());
+                AMQP.BasicProperties basicProperties = new AMQP.BasicProperties.Builder().headers(headers).build();
+                RabbitMQMessage message = new RabbitMQMessage(basicProperties, ((FileContentMessage) input).getContent());
+                return message;
             }
             return null;
         }
