@@ -72,16 +72,16 @@ public class RMQPerfSensor extends AbstractSensor {
             }
         }, interval);
 
-        startChannel(receiveChannel, new MessageReceiver() {
-            @Override
-            public void onMessage(Object message) {
-                if (message instanceof SensorTextMessage) {
-                    System.out.println(((SensorTextMessage) message).getText());
-                } else {
-                    System.out.println("Unexpected message");
-                }
-            }
-        });
+//        startChannel(receiveChannel, new MessageReceiver() {
+//            @Override
+//            public void onMessage(Object message) {
+//                if (message instanceof SensorTextMessage) {
+//                    System.out.println(((SensorTextMessage) message).getText());
+//                } else {
+//                    System.out.println("Unexpected message");
+//                }
+//            }
+//        });
 
         LOG.info("Received open request {}", this.context.getId());
     }
@@ -112,7 +112,7 @@ public class RMQPerfSensor extends AbstractSensor {
             Channel receiveChannel = createChannel("receiver", receiveProps, Direction.IN, 1024, new ByteToTextConverter());
 
             context.addChannel("rabbitmq", sendChannel);
-            context.addChannel("rabbitmq", receiveChannel);
+            // context.addChannel("rabbitmq", receiveChannel);
 
             return context;
         }
@@ -180,9 +180,14 @@ public class RMQPerfSensor extends AbstractSensor {
         SensorClient client;
         try {
             client = new SensorClient(conf);
-            SensorDeployDescriptor deployDescriptor = new SensorDeployDescriptor("sensors-1.0-SNAPSHOT.jar",
+            SensorDeployDescriptor deployDescriptor = new SensorDeployDescriptor("sensors-1.0-SNAPSHOT-jar-with-dependencies.jar",
                     "cgl.sensorstream.sensors.rabbitmq.RMQPerfSensor");
             parseArgs(args, deployDescriptor);
+
+            deployDescriptor.addProperty(EXCHANGE_NAME_PROP, "testExchange");
+            deployDescriptor.addProperty(ROUTING_KEY_PROP, "testRoute");
+            deployDescriptor.addProperty(SEND_QUEUE_NAME_PROP, "send");
+            deployDescriptor.addProperty(RECEIVE_QUEUE_PROP, "receive");
 
             List<String> sites = new ArrayList<String>();
             sites.add("local-1");
