@@ -45,24 +45,22 @@ public class PerfTopology {
             }
         });
 
-        // spout.setJmsAcknowledgeMode(Session.);
-
         builder.setSpout("word", spout, 4);
         builder.setBolt("time1", new PerfAggrBolt(), 4).shuffleGrouping("word");
 
         Config conf = new Config();
         conf.setDebug(true);
 
-//        if (args != null && args.length > 0) {
-        conf.setNumWorkers(8);
-        StormSubmitter.submitTopology(args[0], conf, builder.createTopology());
-//        } else {
-//            LocalCluster cluster = new LocalCluster();
-//            cluster.submitTopology("perf", conf, builder.createTopology());
-//            Thread.sleep(60000);
-//            cluster.killTopology("perf");
-//            cluster.shutdown();
-//        }
+        if (args != null && args.length > 0) {
+            conf.setNumWorkers(8);
+            StormSubmitter.submitTopology(args[0], conf, builder.createTopology());
+        } else {
+            LocalCluster cluster = new LocalCluster();
+            cluster.submitTopology("perf", conf, builder.createTopology());
+            Thread.sleep(60000);
+            cluster.killTopology("perf");
+            cluster.shutdown();
+        }
     }
 
     private static class LocalJMSProvider implements JmsProvider {

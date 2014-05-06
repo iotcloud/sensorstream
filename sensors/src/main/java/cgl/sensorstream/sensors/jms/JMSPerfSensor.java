@@ -42,7 +42,8 @@ public class JMSPerfSensor extends AbstractSensor {
     }
 
     @Override
-    public void open(SensorContext context) { Object intervalProp = context.getProperty(SEND_INTERVAL);
+    public void open(SensorContext context) {
+        Object intervalProp = context.getProperty(SEND_INTERVAL);
         int interval = 100;
         if (intervalProp != null && intervalProp instanceof Integer) {
             interval = (Integer) intervalProp;
@@ -158,7 +159,6 @@ public class JMSPerfSensor extends AbstractSensor {
                 try {
                     TextMessage message = ((Session) context).createTextMessage();
                     message.setText(((SensorTextMessage) input).getText());
-
                     return message;
                 } catch (JMSException e) {
                     LOG.error("Failed to convert SensorTextMessage to JMS message", e);
@@ -176,10 +176,13 @@ public class JMSPerfSensor extends AbstractSensor {
             client = new SensorClient(conf);
 
             List<String> sites = new ArrayList<String>();
-            sites.add("local");
+            sites.add("local-1");
+            sites.add("local-2");
 
             SensorDeployDescriptor deployDescriptor = new SensorDeployDescriptor("sensors-1.0-SNAPSHOT.jar", "cgl.sensorstream.sensors.jms.JMSPerfSensor");
             deployDescriptor.addDeploySites(sites);
+
+            parseArgs(args, deployDescriptor);
 
             client.deploySensor(deployDescriptor);
         } catch (TTransportException e) {
@@ -212,6 +215,9 @@ public class JMSPerfSensor extends AbstractSensor {
             String fileName = cmd.getOptionValue("f");
             descriptor.addProperty(SEND_INTERVAL, timeString);
             descriptor.addProperty(FILE_NAME, fileName);
+
+            descriptor.addProperty(SEND_QUEUE_NAME_PROP, "send");
+            descriptor.addProperty(RECEIVE_QUEUE_PROP, "receive");
         } catch (ParseException e) {
             throw new RuntimeException(e);
         }

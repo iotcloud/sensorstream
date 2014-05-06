@@ -149,6 +149,11 @@
                 <version>${storm.bcs.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>storm-bcs</groupId>
+                <artifactId>storm-jms</artifactId>
+                <version>${storm.bcs.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>
