@@ -101,10 +101,22 @@
         <dependency>
             <groupId>storm-bcs</groupId>
             <artifactId>storm-rabbitmq</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.storm</groupId>
+                    <artifactId>storm-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>storm-bcs</groupId>
             <artifactId>storm-jms</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.storm</groupId>
+                    <artifactId>storm-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 </project>

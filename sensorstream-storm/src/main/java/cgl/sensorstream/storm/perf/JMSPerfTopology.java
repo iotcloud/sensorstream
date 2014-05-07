@@ -27,7 +27,7 @@ public class JMSPerfTopology {
 
         Config conf = new Config();
         if (args != null && args.length > 0) {
-            conf.setNumWorkers(2);
+            conf.setNumWorkers(4);
             StormSubmitter.submitTopology("test", conf, builder.createTopology());
         } else {
             LocalCluster cluster = new LocalCluster();
@@ -81,9 +81,9 @@ public class JMSPerfTopology {
                 connection.start();
 
                 Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                for (int i = 0; i < number; i++) {
-                    this.destinations.put(queueName + i, session.createQueue(queueName + i));
-                }
+//                for (int i = 0; i < number; i++) {
+                    this.destinations.put(queueName, session.createQueue(queueName));
+//                }
 
                 connection.close();
             } catch (JMSException e) {

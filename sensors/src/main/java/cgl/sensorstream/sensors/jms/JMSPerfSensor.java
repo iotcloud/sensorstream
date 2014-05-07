@@ -179,7 +179,7 @@ public class JMSPerfSensor extends AbstractSensor {
             sites.add("local-1");
             sites.add("local-2");
 
-            SensorDeployDescriptor deployDescriptor = new SensorDeployDescriptor("sensors-1.0-SNAPSHOT.jar", "cgl.sensorstream.sensors.jms.JMSPerfSensor");
+            SensorDeployDescriptor deployDescriptor = new SensorDeployDescriptor("sensors-1.0-SNAPSHOT-jar-with-dependencies.jar", "cgl.sensorstream.sensors.jms.JMSPerfSensor");
             deployDescriptor.addDeploySites(sites);
 
             parseArgs(args, deployDescriptor);
