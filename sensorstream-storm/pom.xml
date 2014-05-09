@@ -76,11 +76,11 @@
             <artifactId>storm-core</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>com.github.ptgoetz</groupId>
-            <artifactId>storm-jms</artifactId>
-            <version>0.9.1-SNAPSHOT</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.github.ptgoetz</groupId>-->
+            <!--<artifactId>storm-jms</artifactId>-->
+            <!--<version>0.9.1-SNAPSHOT</version>-->
+        <!--</dependency>-->
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-recipes</artifactId>
@@ -93,11 +93,11 @@
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.latent</groupId>
-            <artifactId>storm-rabbitmq</artifactId>
-            <version>0.5.9</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>io.latent</groupId>-->
+            <!--<artifactId>storm-rabbitmq</artifactId>-->
+            <!--<version>0.5.9</version>-->
+        <!--</dependency>-->
         <dependency>
             <groupId>storm-bcs</groupId>
             <artifactId>storm-rabbitmq</artifactId>
@@ -111,6 +111,16 @@
         <dependency>
             <groupId>storm-bcs</groupId>
             <artifactId>storm-jms</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.storm</groupId>
+                    <artifactId>storm-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>storm-bcs</groupId>
+            <artifactId>storm-mqtt</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.storm</groupId>
