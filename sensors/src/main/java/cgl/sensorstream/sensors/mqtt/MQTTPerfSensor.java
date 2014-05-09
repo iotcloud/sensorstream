@@ -130,7 +130,7 @@ public class MQTTPerfSensor extends AbstractSensor {
         @Override
         public Object convert(Object o, Object o1) {
             long currentTime = System.currentTimeMillis();
-            String send = currentTime + "\n" + o.toString();
+            String send = currentTime + "\r\n" + o.toString();
             return send.getBytes();
         }
     }
