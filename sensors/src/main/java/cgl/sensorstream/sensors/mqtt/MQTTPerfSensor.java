@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 public class MQTTPerfSensor extends AbstractSensor {
@@ -50,7 +49,7 @@ public class MQTTPerfSensor extends AbstractSensor {
         this.context = context;
 
         final Channel sendChannel = context.getChannel("mqtt", "sender");
-//        final Channel receiveChannel = context.getChannel("mqtt", "receiver");
+        final Channel receiveChannel = context.getChannel("mqtt", "receiver");
 
         final String content;
         try {
@@ -73,16 +72,16 @@ public class MQTTPerfSensor extends AbstractSensor {
             }
         }, interval);
 
-//        startListen(receiveChannel, new MessageReceiver() {
-//            @Override
-//            public void onMessage(Object message) {
-//                if (message instanceof SensorTextMessage) {
-//                    System.out.println(((SensorTextMessage) message).getText());
-//                } else {
-//                    System.out.println("Unexpected message");
-//                }
-//            }
-//        });
+        startListen(receiveChannel, new MessageReceiver() {
+            @Override
+            public void onMessage(Object message) {
+                if (message instanceof SensorTextMessage) {
+                    System.out.println(((SensorTextMessage) message).getText());
+                } else {
+                    System.out.println("Unexpected message");
+                }
+            }
+        });
 
         LOG.info("Received open request {}", this.context.getId());
     }
@@ -115,18 +114,27 @@ public class MQTTPerfSensor extends AbstractSensor {
             sendProps.put("queueName", sendQueue);
             Channel sendChannel = createChannel("sender", sendProps, Direction.OUT, 1024, new MQTTOutMessageConverter());
 
-//            Map receiveProps = new HashMap();
-//            receiveProps.put("queueName", recvQueue);
-//            Channel receiveChannel = createChannel("receiver", receiveProps, Direction.IN, 1024, new ByteToTextConverter());
+            Map receiveProps = new HashMap();
+            receiveProps.put("queueName", recvQueue);
+            Channel receiveChannel = createChannel("receiver", receiveProps, Direction.IN, 1024, new MQTTInMessageConverter());
 
             context.addChannel("mqtt", sendChannel);
-            // context.addChannel("rabbitmq", receiveChannel);
+            context.addChannel("rabbitmq", receiveChannel);
 
             return context;
         }
     }
 
     private class MQTTOutMessageConverter implements MessageConverter {
+        @Override
+        public Object convert(Object o, Object o1) {
+            long currentTime = System.currentTimeMillis();
+            String send = currentTime + "\r\n" + o.toString();
+            return send.getBytes();
+        }
+    }
+
+    private class MQTTInMessageConverter implements MessageConverter {
         @Override
         public Object convert(Object o, Object o1) {
             long currentTime = System.currentTimeMillis();
