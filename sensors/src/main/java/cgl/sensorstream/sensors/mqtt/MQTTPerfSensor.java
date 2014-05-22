@@ -9,11 +9,14 @@ import cgl.iotcloud.core.transport.Channel;
 import cgl.iotcloud.core.transport.Direction;
 import cgl.iotcloud.core.transport.IdentityConverter;
 import cgl.iotcloud.core.transport.MessageConverter;
+import cgl.iotcloud.transport.mqtt.MQTTMessage;
 import cgl.sensorstream.sensors.AbstractPerfSensor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,12 +24,6 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
 public class MQTTPerfSensor extends AbstractPerfSensor {
-    public static final String SEND_QUEUE_NAME_PROP = "send_queue";
-    public static final String RECEIVE_QUEUE_PROP = "recv_queue";
-
-    public static final String SEND_INTERVAL = "send_interval";
-    public static final String FILE_NAME = "file_name";
-
     private static Logger LOG = LoggerFactory.getLogger(MQTTPerfSensor.class);
 
     private SensorContext context;
@@ -74,10 +71,22 @@ public class MQTTPerfSensor extends AbstractPerfSensor {
         startListen(receiveChannel, new MessageReceiver() {
             @Override
             public void onMessage(Object message) {
-                if (message instanceof SensorTextMessage) {
-                    System.out.println(((SensorTextMessage) message).getText());
+                if (message instanceof MQTTMessage) {
+                    MQTTMessage envelope = (MQTTMessage) message;
+                    byte []body = envelope.getBody().toByteArray();
+                    String bodyS = new String(body);
+                    BufferedReader reader = new BufferedReader(new StringReader(bodyS));
+                    String timeStampS = null;
+                    try {
+                        timeStampS = reader.readLine();
+                    } catch (IOException e) {
+                        LOG.error("Error occurred while reading the bytes", e);
+                    }
+                    Long timeStamp = Long.parseLong(timeStampS);
+                    long currentTime = System.currentTimeMillis();
+                    LOG.info("latency: " + (currentTime - timeStamp) + " initial time: " + timeStamp + " current: " + currentTime);
                 } else {
-                    System.out.println("Unexpected message");
+                    LOG.error("Unexpected message");
                 }
             }
         });

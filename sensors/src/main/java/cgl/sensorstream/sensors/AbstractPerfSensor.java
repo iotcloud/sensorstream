@@ -9,13 +9,16 @@ import org.apache.thrift.transport.TTransportException;
 
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public abstract class AbstractPerfSensor extends AbstractSensor {
+    public static final String SEND_QUEUE_NAME_PROP = "send_queue";
+    public static final String RECEIVE_QUEUE_PROP = "recv_queue";
+
     public static final String SEND_INTERVAL = "send_interval";
     public static final String FILE_NAME = "file_name";
+
 
     public static void deploy(String args[], List<String> sites, String className) {
         // read the configuration file
