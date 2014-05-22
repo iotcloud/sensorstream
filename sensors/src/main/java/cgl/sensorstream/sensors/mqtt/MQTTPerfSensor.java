@@ -11,6 +11,7 @@ import cgl.iotcloud.core.transport.IdentityConverter;
 import cgl.iotcloud.core.transport.MessageConverter;
 import cgl.iotcloud.transport.mqtt.MQTTMessage;
 import cgl.sensorstream.sensors.AbstractPerfSensor;
+import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +30,7 @@ public class MQTTPerfSensor extends AbstractPerfSensor {
     private SensorContext context;
 
     @Override
-    public cgl.iotcloud.core.Configurator getConfigurator(Map conf) {
+    public Configurator getConfigurator(Map conf) {
         return new MQTTConfigurator();
     }
 
@@ -142,6 +143,10 @@ public class MQTTPerfSensor extends AbstractPerfSensor {
         List<String> sites = new ArrayList<String>();
         sites.add("local-1");
         sites.add("local-2");
-        deploy(args, sites, MQTTPerfSensor.class.getCanonicalName());
+        try {
+            deploy(args, sites, MQTTPerfSensor.class.getCanonicalName());
+        } catch (TTransportException e) {
+            LOG.error("Error deploying the sensor", e);
+        }
     }
 }

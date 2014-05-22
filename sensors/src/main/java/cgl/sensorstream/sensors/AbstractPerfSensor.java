@@ -21,28 +21,28 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
     public static final String FILE_NAME = "file_name";
 
 
-    public static void deploy(String args[], List<String> sites, String className) {
+    public static void deploy(String args[], List<String> sites, String className) throws TTransportException {
         // read the configuration file
         Map conf = Utils.readConfig();
         SensorClient client;
-        try {
-            client = new SensorClient(conf);
+        client = new SensorClient(conf);
 
+        SensorConfiguration configuration = parseArgs(args);
+        for (int i = 0; i < configuration.getNoSensors() / sites.size(); i++) {
             SensorDeployDescriptor deployDescriptor = new SensorDeployDescriptor("sensors-1.0-SNAPSHOT-jar-with-dependencies.jar", className);
             deployDescriptor.addDeploySites(sites);
-
-            parseArgs(args, deployDescriptor);
-
+            addConfigurationsToDescriptor(configuration, deployDescriptor, i + 1);
             client.deploySensor(deployDescriptor);
-        } catch (TTransportException e) {
-            e.printStackTrace();
         }
     }
 
-    public static void parseArgs(String []args, SensorDeployDescriptor descriptor) {
+    public static SensorConfiguration parseArgs(String []args) {
         Options options = new Options();
         options.addOption("t", true, "Time interval");
         options.addOption("f", true, "File name");
+        options.addOption("n", true, "Number of sensors");
+        options.addOption("qr", true, "Receive Queue name");
+        options.addOption("qs", true, "Send Queue name");
 
         CommandLineParser commandLineParser = new BasicParser();
         try {
@@ -50,11 +50,23 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
 
             String timeString = cmd.getOptionValue("t", "100");
             String fileName = cmd.getOptionValue("f");
-            descriptor.addProperty(SEND_INTERVAL, timeString);
-            descriptor.addProperty(FILE_NAME, fileName);
+            int noSensors = Integer.parseInt(cmd.getOptionValue("n"));
+            String recvQueueName = cmd.getOptionValue("qr");
+            String sendQueueName = cmd.getOptionValue("qs");
+
+            return new SensorConfiguration(noSensors, sendQueueName, recvQueueName, Integer.parseInt(timeString), fileName);
         } catch (ParseException e) {
-            throw new RuntimeException(e);
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp("sensor", options );
         }
+        return null;
+    }
+
+    public static void addConfigurationsToDescriptor(SensorConfiguration configuration, SensorDeployDescriptor deployDescriptor, int sensorNo) {
+        deployDescriptor.addProperty(SEND_INTERVAL, Integer.toString(configuration.getSendInterval()));
+        deployDescriptor.addProperty(FILE_NAME, configuration.getFileName());
+        deployDescriptor.addProperty(SEND_QUEUE_NAME_PROP, configuration.getBaseSendQueueName() + "_" + sensorNo);
+        deployDescriptor.addProperty(RECEIVE_QUEUE_PROP, configuration.getBaseRecvQueueName() + "_" + sensorNo);
     }
 
     public static String readEntireFile(String filename) throws IOException {
