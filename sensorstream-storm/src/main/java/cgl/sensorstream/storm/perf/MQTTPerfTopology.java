@@ -131,7 +131,7 @@ public class MQTTPerfTopology {
         }
 
         public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-            outputFieldsDeclarer.declare(new Fields("time1", "body"));
+            outputFieldsDeclarer.declare(new Fields("body"));
         }
 
         public int queueSize() {

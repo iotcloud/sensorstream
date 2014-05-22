@@ -7,13 +7,12 @@ import cgl.iotcloud.core.sensorsite.SensorDeployDescriptor;
 import cgl.iotcloud.core.sensorsite.SiteContext;
 import cgl.iotcloud.core.transport.Channel;
 import cgl.iotcloud.core.transport.Direction;
+import cgl.iotcloud.core.transport.IdentityConverter;
 import cgl.iotcloud.core.transport.MessageConverter;
-import org.apache.commons.cli.*;
-import org.apache.thrift.transport.TTransportException;
+import cgl.sensorstream.sensors.AbstractPerfSensor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
-public class MQTTPerfSensor extends AbstractSensor {
+public class MQTTPerfSensor extends AbstractPerfSensor {
     public static final String SEND_QUEUE_NAME_PROP = "send_queue";
     public static final String RECEIVE_QUEUE_PROP = "recv_queue";
 
@@ -116,7 +115,7 @@ public class MQTTPerfSensor extends AbstractSensor {
 
             Map receiveProps = new HashMap();
             receiveProps.put("queueName", recvQueue);
-            Channel receiveChannel = createChannel("receiver", receiveProps, Direction.IN, 1024, new MQTTInMessageConverter());
+            Channel receiveChannel = createChannel("receiver", receiveProps, Direction.IN, 1024, new IdentityConverter());
 
             context.addChannel("mqtt", sendChannel);
             context.addChannel("rabbitmq", receiveChannel);
@@ -134,67 +133,10 @@ public class MQTTPerfSensor extends AbstractSensor {
         }
     }
 
-    private class MQTTInMessageConverter implements MessageConverter {
-        @Override
-        public Object convert(Object o, Object o1) {
-            long currentTime = System.currentTimeMillis();
-            String send = currentTime + "\r\n" + o.toString();
-            return send.getBytes();
-        }
-    }
-
     public static void main(String[] args) {
-        // read the configuration file
-        Map conf = Utils.readConfig();
-        SensorClient client;
-        try {
-            client = new SensorClient(conf);
-
-            List<String> sites = new ArrayList<String>();
-            sites.add("local-1");
-            sites.add("local-2");
-
-            SensorDeployDescriptor deployDescriptor = new SensorDeployDescriptor("sensors-1.0-SNAPSHOT-jar-with-dependencies.jar", "cgl.sensorstream.sensors.mqtt.MQTTPerfSensor");
-            deployDescriptor.addDeploySites(sites);
-
-            parseArgs(args, deployDescriptor);
-
-            client.deploySensor(deployDescriptor);
-        } catch (TTransportException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static String readEntireFile(String filename) throws IOException {
-        FileReader in = new FileReader(filename);
-        StringBuilder contents = new StringBuilder();
-        char[] buffer = new char[4096];
-        int read = 0;
-        do {
-            contents.append(buffer, 0, read);
-            read = in.read(buffer);
-        } while (read >= 0);
-        return contents.toString();
-    }
-
-    public static void parseArgs(String []args, SensorDeployDescriptor descriptor) {
-        Options options = new Options();
-        options.addOption("t", true, "Time interval");
-        options.addOption("f", true, "File name");
-
-        CommandLineParser commandLineParser = new BasicParser();
-        try {
-            CommandLine cmd = commandLineParser.parse(options, args);
-
-            String timeString = cmd.getOptionValue("t", "100");
-            String fileName = cmd.getOptionValue("f");
-            descriptor.addProperty(SEND_INTERVAL, timeString);
-            descriptor.addProperty(FILE_NAME, fileName);
-
-            descriptor.addProperty(SEND_QUEUE_NAME_PROP, "send");
-            descriptor.addProperty(RECEIVE_QUEUE_PROP, "receive");
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
-        }
+        List<String> sites = new ArrayList<String>();
+        sites.add("local-1");
+        sites.add("local-2");
+        deploy(args, sites, MQTTPerfSensor.class.getCanonicalName());
     }
 }
