@@ -35,15 +35,10 @@ public class MQTTPerfSensor extends AbstractPerfSensor {
 
     @Override
     public void open(SensorContext context) {
-        Object intervalProp = context.getProperty(SEND_INTERVAL);
-        int interval = 100;
-        if (intervalProp != null && intervalProp instanceof Integer) {
-            interval = (Integer) intervalProp;
-        }
-        String fileName = context.getProperty(FILE_NAME).toString();
-
         this.context = context;
 
+        int interval = getSendInterval(context);
+        String fileName = context.getProperty(FILE_NAME).toString();
         final Channel sendChannel = context.getChannel("mqtt", "sender");
         final Channel receiveChannel = context.getChannel("mqtt", "receiver");
 
@@ -93,6 +88,7 @@ public class MQTTPerfSensor extends AbstractPerfSensor {
 
         LOG.info("Received open request {}", this.context.getId());
     }
+
 
     @Override
     public void close() {

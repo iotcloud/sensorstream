@@ -16,12 +16,14 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;
 
-public class MQTTPerfTopology {
+public class MQTTPerfTopology extends AbstractPerfTopology {
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
 
-        MQTTSpout spout = new MQTTSpout(new SpoutConfigurator(), null);
-        MQTTBolt bolt = new MQTTBolt(new BoltConfigurator());
+        TopologyConfiguration configuration = parseArgs(args);
+
+        MQTTSpout spout = new MQTTSpout(new SpoutConfigurator(configuration), null);
+        MQTTBolt bolt = new MQTTBolt(new BoltConfigurator(configuration));
 
         builder.setSpout("word", spout, 1);
         builder.setBolt("time1", bolt, 1).shuffleGrouping("word");
@@ -53,9 +55,7 @@ public class MQTTPerfTopology {
 
                 System.out.println("latency: " + (currentTime - timeStamp) + " initial time: " + timeStamp + " current: " + currentTime);
                 List<Object> tuples = new ArrayList<Object>();
-                tuples.add(new Long((currentTime - timeStamp)));
                 tuples.add(envelope);
-
                 return tuples;
             } catch (IOException e) {
                 e.printStackTrace();
@@ -65,7 +65,7 @@ public class MQTTPerfTopology {
 
         @Override
         public MQTTMessage serialize(Tuple tuple) {
-            Object message = tuple.getValue(1);
+            Object message = tuple.getValue(0);
             if (message instanceof  MQTTMessage){
                 return (MQTTMessage) message;
             }
@@ -74,9 +74,11 @@ public class MQTTPerfTopology {
     }
 
     private static class SpoutConfigurator implements MQTTConfigurator {
-        private String url = "tcp://localhost:61616";
+        private TopologyConfiguration configuration;
 
-        private String queueName = "send";
+        private SpoutConfigurator(TopologyConfiguration configuration) {
+            this.configuration = configuration;
+        }
 
         public MessageBuilder getMessageBuilder() {
             return new TimeStampMessageBuilder();
@@ -89,12 +91,16 @@ public class MQTTPerfTopology {
 
         @Override
         public String getURL() {
-            return url;
+            return configuration.getIp();
         }
 
         @Override
         public List<String> getQueueName() {
-            return Arrays.asList(queueName);
+            List<String> list = new ArrayList<String>();
+            for (int i = 0; i < configuration.getNoQueues(); i++) {
+                list.add(configuration.getRecevBaseQueueName() + "_" + i);
+            }
+            return list;
         }
 
         public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
@@ -107,9 +113,12 @@ public class MQTTPerfTopology {
     }
 
     private static class BoltConfigurator implements MQTTConfigurator {
-        private String url = "tcp://localhost:61616";
 
-        private String queueName = "send";
+        private TopologyConfiguration configuration;
+
+        private BoltConfigurator(TopologyConfiguration configuration) {
+            this.configuration = configuration;
+        }
 
         public MessageBuilder getMessageBuilder() {
             return new TimeStampMessageBuilder();
@@ -122,12 +131,16 @@ public class MQTTPerfTopology {
 
         @Override
         public String getURL() {
-            return url;
+            return configuration.getIp();
         }
 
         @Override
         public List<String> getQueueName() {
-            return Arrays.asList(queueName);
+            List<String> list = new ArrayList<String>();
+            for (int i = 0; i < configuration.getNoQueues(); i++) {
+                list.add(configuration.getSendBaseQueueName() + "_" + i);
+            }
+            return list;
         }
 
         public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {

@@ -89,6 +89,7 @@
     <orderEntry type="library" name="Maven: com.rabbitmq:amqp-client:3.2.4" level="project" />
     <orderEntry type="library" name="Maven: storm-bcs:storm-jms:1.0-SNAPSHOT" level="project" />
     <orderEntry type="library" name="Maven: storm-bcs:storm-mqtt:1.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="Maven: commons-cli:commons-cli:1.2" level="project" />
   </component>
 </module>
 

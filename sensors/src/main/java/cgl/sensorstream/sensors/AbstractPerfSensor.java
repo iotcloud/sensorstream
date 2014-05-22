@@ -1,6 +1,7 @@
 package cgl.sensorstream.sensors;
 
 import cgl.iotcloud.core.AbstractSensor;
+import cgl.iotcloud.core.SensorContext;
 import cgl.iotcloud.core.Utils;
 import cgl.iotcloud.core.client.SensorClient;
 import cgl.iotcloud.core.sensorsite.SensorDeployDescriptor;
@@ -67,4 +68,14 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
         } while (read >= 0);
         return contents.toString();
     }
+
+    public static int getSendInterval(SensorContext context) {
+        Object intervalProp = context.getProperty(SEND_INTERVAL);
+        int interval = 100;
+        if (intervalProp != null && intervalProp instanceof Integer) {
+            interval = (Integer) intervalProp;
+        }
+        return interval;
+    }
+
 }
