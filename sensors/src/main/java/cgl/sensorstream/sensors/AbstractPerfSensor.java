@@ -20,6 +20,7 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
     public static final String SEND_INTERVAL = "send_interval";
     public static final String FILE_NAME = "file_name";
 
+    public static final String SENSOR_NAME = "name";
 
     public static void deploy(String args[], List<String> sites, String className) throws TTransportException {
         // read the configuration file
@@ -31,7 +32,7 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
         for (int i = 0; i < configuration.getNoSensors() / sites.size(); i++) {
             SensorDeployDescriptor deployDescriptor = new SensorDeployDescriptor("sensors-1.0-SNAPSHOT-jar-with-dependencies.jar", className);
             deployDescriptor.addDeploySites(sites);
-            addConfigurationsToDescriptor(configuration, deployDescriptor, i + 1);
+            addConfigurationsToDescriptor(configuration, deployDescriptor, i);
             client.deploySensor(deployDescriptor);
         }
     }
@@ -67,6 +68,7 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
         deployDescriptor.addProperty(FILE_NAME, configuration.getFileName());
         deployDescriptor.addProperty(SEND_QUEUE_NAME_PROP, configuration.getBaseSendQueueName() + "_" + sensorNo);
         deployDescriptor.addProperty(RECEIVE_QUEUE_PROP, configuration.getBaseRecvQueueName() + "_" + sensorNo);
+        deployDescriptor.addProperty(SENSOR_NAME, "perf_" + sensorNo);
     }
 
     public static String readEntireFile(String filename) throws IOException {

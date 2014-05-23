@@ -105,10 +105,12 @@ public class MQTTPerfSensor extends AbstractPerfSensor {
     private class MQTTConfigurator extends AbstractConfigurator {
         @Override
         public SensorContext configure(SiteContext siteContext, Map conf) {
-            SensorContext context = new SensorContext(new SensorId("mqttPerf", "general"));
             String sendQueue = (String) conf.get(SEND_QUEUE_NAME_PROP);
             String recvQueue = (String) conf.get(RECEIVE_QUEUE_PROP);
             String fileName = (String) conf.get(FILE_NAME);
+            String sensorName = (String) conf.get(SENSOR_NAME);
+
+            SensorContext context = new SensorContext(new SensorId(sensorName, "general"));
 
             String sendInterval = (String) conf.get(SEND_INTERVAL);
             int interval = Integer.parseInt(sendInterval);
@@ -124,7 +126,7 @@ public class MQTTPerfSensor extends AbstractPerfSensor {
             Channel receiveChannel = createChannel("receiver", receiveProps, Direction.IN, 1024, new IdentityConverter());
 
             context.addChannel("mqtt", sendChannel);
-            context.addChannel("rabbitmq", receiveChannel);
+            context.addChannel("mqtt", receiveChannel);
 
             return context;
         }
@@ -141,8 +143,8 @@ public class MQTTPerfSensor extends AbstractPerfSensor {
 
     public static void main(String[] args) {
         List<String> sites = new ArrayList<String>();
-        sites.add("local-1");
-        sites.add("local-2");
+        sites.add("local");
+//        sites.add("local-2");
         try {
             deploy(args, sites, MQTTPerfSensor.class.getCanonicalName());
         } catch (TTransportException e) {

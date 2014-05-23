@@ -6,7 +6,9 @@ import backtype.storm.StormSubmitter;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
+import backtype.storm.tuple.Tuple;
 import com.ss.jms.JMSConfigurator;
+import com.ss.jms.JMSMessage;
 import com.ss.jms.JMSSpout;
 import com.ss.jms.MessageBuilder;
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -53,6 +55,16 @@ public class JMSPerfTopology {
             } catch (JMSException e) {
                 e.printStackTrace();
             }
+            return null;
+        }
+
+        @Override
+        public String getQueue(Tuple tuple) {
+            return null;
+        }
+
+        @Override
+        public JMSMessage serialize(Tuple tuple, Object o) {
             return null;
         }
     }
