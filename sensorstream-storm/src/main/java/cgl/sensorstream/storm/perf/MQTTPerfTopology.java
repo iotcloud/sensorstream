@@ -29,16 +29,16 @@ public class MQTTPerfTopology extends AbstractPerfTopology {
         builder.setBolt("time1", bolt, 1).shuffleGrouping("word");
 
         Config conf = new Config();
-        if (args != null && args.length > 0) {
-            conf.setNumWorkers(4);
-            StormSubmitter.submitTopology(args[0], conf, builder.createTopology());
-        } else {
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("mqttTest", conf, builder.createTopology());
-            Thread.sleep(6000000);
-            cluster.killTopology("test");
-            cluster.shutdown();
-        }
+//        if (args != null && args.length > 0) {
+//            conf.setNumWorkers(configuration.getNoWorkers());
+//            StormSubmitter.submitTopology(args[0], conf, builder.createTopology());
+//        } else {
+        LocalCluster cluster = new LocalCluster();
+        cluster.submitTopology("mqttTest", conf, builder.createTopology());
+        Thread.sleep(6000000);
+        cluster.killTopology("test");
+        cluster.shutdown();
+//        }
     }
 
     private static class TimeStampMessageBuilder implements MessageBuilder {
@@ -110,10 +110,14 @@ public class MQTTPerfTopology extends AbstractPerfTopology {
         public int queueSize() {
             return 1024;
         }
+
+        @Override
+        public DestinationSelector getDestinationSelector() {
+            return null;
+        }
     }
 
     private static class BoltConfigurator implements MQTTConfigurator {
-
         private TopologyConfiguration configuration;
 
         private BoltConfigurator(TopologyConfiguration configuration) {
@@ -149,6 +153,21 @@ public class MQTTPerfTopology extends AbstractPerfTopology {
 
         public int queueSize() {
             return 1024;
+        }
+
+        @Override
+        public DestinationSelector getDestinationSelector() {
+            return new DestinationSelector() {
+                @Override
+                public String select(MQTTMessage message) {
+                    String queue = message.getQueue();
+                    if (queue != null) {
+                        String queueNumber = queue.substring(queue.indexOf("_") + 1);
+                        return configuration.getSendBaseQueueName() + "_" + queueNumber;
+                    }
+                    return null;
+                }
+            };
         }
     }
 }
