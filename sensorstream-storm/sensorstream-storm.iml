@@ -10,6 +10,18 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="file://$MODULE_DIR$/../../mqtt-client/mqtt-client" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="file://$MODULE_DIR$/../../mqtt-client/mqtt-client/src/main/java" />
+          <root url="file://$MODULE_DIR$/../../mqtt-client/mqtt-client/src/test/java" />
+        </SOURCES>
+      </library>
+    </orderEntry>
     <orderEntry type="library" scope="TEST" name="Maven: junit:junit:3.8.1" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.6" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-log4j12:1.7.6" level="project" />
@@ -27,10 +39,10 @@
     <orderEntry type="library" name="Maven: org.apache.activemq:activemq-core:5.7.0" level="project" />
     <orderEntry type="library" name="Maven: org.apache.activemq:kahadb:5.7.0" level="project" />
     <orderEntry type="library" name="Maven: org.apache.activemq.protobuf:activemq-protobuf:1.1" level="project" />
-    <orderEntry type="library" name="Maven: org.fusesource.mqtt-client:mqtt-client:1.7" level="project" />
-    <orderEntry type="library" name="Maven: org.fusesource.hawtdispatch:hawtdispatch-transport:1.19" level="project" />
-    <orderEntry type="library" name="Maven: org.fusesource.hawtdispatch:hawtdispatch:1.19" level="project" />
-    <orderEntry type="library" name="Maven: org.fusesource.hawtbuf:hawtbuf:1.9" level="project" />
+    <orderEntry type="library" name="Maven: org.fusesource.mqtt-client:mqtt-client:1.11-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="Maven: org.fusesource.hawtdispatch:hawtdispatch-transport:1.20" level="project" />
+    <orderEntry type="library" name="Maven: org.fusesource.hawtdispatch:hawtdispatch:1.20" level="project" />
+    <orderEntry type="library" name="Maven: org.fusesource.hawtbuf:hawtbuf:1.10" level="project" />
     <orderEntry type="library" name="Maven: org.apache.geronimo.specs:geronimo-j2ee-management_1.1_spec:1.0.1" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-context:3.0.7.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-aop:3.0.7.RELEASE" level="project" />

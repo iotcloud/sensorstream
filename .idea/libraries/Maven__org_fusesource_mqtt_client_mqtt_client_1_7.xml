@@ -7,6 +7,8 @@
       <root url="jar://$MAVEN_REPOSITORY$/org/fusesource/mqtt-client/mqtt-client/1.7/mqtt-client-1.7-javadoc.jar!/" />
     </JAVADOC>
     <SOURCES>
+      <root url="file://$PROJECT_DIR$/../mqtt-client/mqtt-client/src/main/java" />
+      <root url="file://$PROJECT_DIR$/../mqtt-client/mqtt-client/src/test/java" />
       <root url="jar://$MAVEN_REPOSITORY$/org/fusesource/mqtt-client/mqtt-client/1.7/mqtt-client-1.7-sources.jar!/" />
     </SOURCES>
   </library>

@@ -2,7 +2,6 @@ package cgl.sensorstream.storm.perf;
 
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
-import backtype.storm.StormSubmitter;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
@@ -36,7 +35,7 @@ public class MQTTPerfTopology extends AbstractPerfTopology {
         LocalCluster cluster = new LocalCluster();
         cluster.submitTopology("mqttTest", conf, builder.createTopology());
         Thread.sleep(6000000);
-        cluster.killTopology("test");
+        cluster.killTopology("mqttTest");
         cluster.shutdown();
 //        }
     }
@@ -159,8 +158,9 @@ public class MQTTPerfTopology extends AbstractPerfTopology {
         public DestinationSelector getDestinationSelector() {
             return new DestinationSelector() {
                 @Override
-                public String select(MQTTMessage message) {
-                    String queue = message.getQueue();
+                public String select(Tuple message) {
+                    MQTTMessage mqttMessage = (MQTTMessage) message.getValue(0);
+                    String queue = mqttMessage.getQueue();
                     if (queue != null) {
                         String queueNumber = queue.substring(queue.indexOf("_") + 1);
                         return configuration.getSendBaseQueueName() + "_" + queueNumber;

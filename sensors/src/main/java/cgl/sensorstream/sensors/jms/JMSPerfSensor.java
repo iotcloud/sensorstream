@@ -1,14 +1,13 @@
 package cgl.sensorstream.sensors.jms;
 
 import cgl.iotcloud.core.*;
-import cgl.iotcloud.core.client.SensorClient;
 import cgl.iotcloud.core.msg.SensorTextMessage;
-import cgl.iotcloud.core.sensorsite.SensorDeployDescriptor;
 import cgl.iotcloud.core.sensorsite.SiteContext;
 import cgl.iotcloud.core.transport.Channel;
 import cgl.iotcloud.core.transport.Direction;
+import cgl.iotcloud.core.transport.IdentityConverter;
 import cgl.iotcloud.core.transport.MessageConverter;
-import org.apache.commons.cli.*;
+import cgl.sensorstream.sensors.AbstractPerfSensor;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,29 +15,21 @@ import org.slf4j.LoggerFactory;
 import javax.jms.JMSException;
 import javax.jms.Session;
 import javax.jms.TextMessage;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
-public class JMSPerfSensor extends AbstractSensor {
-    public static final String SEND_QUEUE_NAME_PROP = "send_queue";
-    public static final String RECEIVE_QUEUE_PROP = "recv_queue";
-
-    public static final String SEND_INTERVAL = "send_interval";
-    public static final String FILE_NAME = "file_name";
-
+public class JMSPerfSensor extends AbstractPerfSensor {
     private static Logger LOG = LoggerFactory.getLogger(JMSPerfSensor.class);
 
     private SensorContext context;
 
     @Override
     public Configurator getConfigurator(Map conf) {
-        return new ChatConfigurator();
+        return new JMSConfigurator();
     }
 
     @Override
@@ -79,8 +70,14 @@ public class JMSPerfSensor extends AbstractSensor {
         startListen(receiveChannel, new MessageReceiver() {
             @Override
             public void onMessage(Object message) {
-                if (message instanceof SensorTextMessage) {
-                    System.out.println(((SensorTextMessage) message).getText());
+                if (message instanceof TextMessage) {
+                    long currentTime = System.currentTimeMillis();
+                    try {
+                        long timeStamp = ((TextMessage) message).getJMSTimestamp();
+                        LOG.info("latency: " + (currentTime - timeStamp) + " initial time: " + timeStamp + " current: " + currentTime);
+                    } catch (JMSException e) {
+                        LOG.error("Error", e);
+                    }
                 } else {
                     System.out.println("Unexpected message");
                 }
@@ -101,54 +98,35 @@ public class JMSPerfSensor extends AbstractSensor {
         }
     }
 
-    private class ChatConfigurator implements Configurator {
+    private class JMSConfigurator extends AbstractConfigurator {
         @Override
         public SensorContext configure(SiteContext siteContext, Map conf) {
-            SensorContext context = new SensorContext(new SensorId("chat", "general"));
-
             String sendQueue = (String) conf.get(SEND_QUEUE_NAME_PROP);
             String recvQueue = (String) conf.get(RECEIVE_QUEUE_PROP);
             String fileName = (String) conf.get(FILE_NAME);
+            String sensorName = (String) conf.get(SENSOR_NAME);
+
+            SensorContext context = new SensorContext(new SensorId(sensorName, "general"));
 
             String sendInterval = (String) conf.get(SEND_INTERVAL);
             int interval = Integer.parseInt(sendInterval);
             context.addProperty(SEND_INTERVAL, interval);
             context.addProperty(FILE_NAME, fileName);
 
-            BlockingQueue inMassages = new ArrayBlockingQueue(1024);
-            BlockingQueue outMassages = new ArrayBlockingQueue(1024);
             Map properties = new HashMap();
             properties.put(Configuration.CHANNEL_JMS_IS_QUEUE, "false");
             properties.put(Configuration.CHANNEL_JMS_DESTINATION, recvQueue);
-            Channel receiveChannel = new Channel("receiver", Direction.IN, inMassages, outMassages, new JMSToTextMessageConverter());
-            receiveChannel.addProperties(properties);
-            context.addChannel("jms", receiveChannel);
+            Channel receiveChannel = createChannel("receiver", properties, Direction.IN, 1024, new IdentityConverter());
 
-            inMassages = new ArrayBlockingQueue(1024);
-            outMassages = new ArrayBlockingQueue(1024);
             properties = new HashMap();
             properties.put(Configuration.CHANNEL_JMS_IS_QUEUE, "false");
             properties.put(Configuration.CHANNEL_JMS_DESTINATION, sendQueue);
-            Channel sendChannel = new Channel("sender", Direction.OUT, inMassages, outMassages, new TextToJMSMessageConverter());
-            sendChannel.addProperties(properties);
+            Channel sendChannel = createChannel("sender", properties, Direction.OUT, 1024, new TextToJMSMessageConverter());
+
+            context.addChannel("jms", receiveChannel);
             context.addChannel("jms", sendChannel);
 
             return context;
-        }
-    }
-
-    private class JMSToTextMessageConverter implements MessageConverter {
-
-        @Override
-        public Object convert(Object input, Object context) {
-            if (input instanceof TextMessage) {
-                try {
-                    return new SensorTextMessage(((TextMessage) input).getText());
-                } catch (JMSException e) {
-                    LOG.error("Failed to convert JMS message to SensorTextMessage", e);
-                }
-            }
-            return null;
         }
     }
 
@@ -169,57 +147,12 @@ public class JMSPerfSensor extends AbstractSensor {
     }
 
     public static void main(String[] args) {
-        // read the configuration file
-        Map conf = Utils.readConfig();
-        SensorClient client;
+        List<String> sites = new ArrayList<String>();
+        sites.add("local");
         try {
-            client = new SensorClient(conf);
-
-            List<String> sites = new ArrayList<String>();
-            sites.add("local-1");
-            sites.add("local-2");
-
-            SensorDeployDescriptor deployDescriptor = new SensorDeployDescriptor("sensors-1.0-SNAPSHOT-jar-with-dependencies.jar", "cgl.sensorstream.sensors.jms.JMSPerfSensor");
-            deployDescriptor.addDeploySites(sites);
-
-            parseArgs(args, deployDescriptor);
-
-            client.deploySensor(deployDescriptor);
+            deploy(args, sites, JMSPerfSensor.class.getCanonicalName());
         } catch (TTransportException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static String readEntireFile(String filename) throws IOException {
-        FileReader in = new FileReader(filename);
-        StringBuilder contents = new StringBuilder();
-        char[] buffer = new char[4096];
-        int read = 0;
-        do {
-            contents.append(buffer, 0, read);
-            read = in.read(buffer);
-        } while (read >= 0);
-        return contents.toString();
-    }
-
-    public static void parseArgs(String []args, SensorDeployDescriptor descriptor) {
-        Options options = new Options();
-        options.addOption("t", true, "Time interval");
-        options.addOption("f", true, "File name");
-
-        CommandLineParser commandLineParser = new BasicParser();
-        try {
-            CommandLine cmd = commandLineParser.parse(options, args);
-
-            String timeString = cmd.getOptionValue("t", "100");
-            String fileName = cmd.getOptionValue("f");
-            descriptor.addProperty(SEND_INTERVAL, timeString);
-            descriptor.addProperty(FILE_NAME, fileName);
-
-            descriptor.addProperty(SEND_QUEUE_NAME_PROP, "send");
-            descriptor.addProperty(RECEIVE_QUEUE_PROP, "receive");
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
+            LOG.error("Error deploying the sensor", e);
         }
     }
 }

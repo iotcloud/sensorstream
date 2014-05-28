@@ -1,9 +1,7 @@
 package cgl.sensorstream.sensors.mqtt;
 
 import cgl.iotcloud.core.*;
-import cgl.iotcloud.core.client.SensorClient;
 import cgl.iotcloud.core.msg.SensorTextMessage;
-import cgl.iotcloud.core.sensorsite.SensorDeployDescriptor;
 import cgl.iotcloud.core.sensorsite.SiteContext;
 import cgl.iotcloud.core.transport.Channel;
 import cgl.iotcloud.core.transport.Direction;

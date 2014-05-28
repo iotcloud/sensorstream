@@ -2,15 +2,12 @@ package cgl.sensorstream.storm.perf;
 
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
-import backtype.storm.StormSubmitter;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
-import com.ss.jms.JMSConfigurator;
-import com.ss.jms.JMSMessage;
-import com.ss.jms.JMSSpout;
-import com.ss.jms.MessageBuilder;
+import com.ss.jms.*;
+import com.ss.jms.bolt.JMSBolt;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
 import javax.jms.*;
@@ -19,47 +16,45 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class JMSPerfTopology {
+public class JMSPerfTopology extends AbstractPerfTopology {
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
 
-        JMSSpout spout = new JMSSpout(new Configurator("tcp://localhost:61616", 100), null);
+        TopologyConfiguration configuration = parseArgs(args);
+
+        JMSSpout spout = new JMSSpout(new SpoutConfigurator(configuration), null);
+        JMSBolt bolt = new JMSBolt(new BoltConfigurator(configuration), null);
+
         builder.setSpout("word", spout, 1);
-        builder.setBolt("time1", new PerfAggrBolt(), 1).shuffleGrouping("word");
+        builder.setBolt("time1", bolt, 1).shuffleGrouping("word");
 
         Config conf = new Config();
-        if (args != null && args.length > 0) {
-            conf.setNumWorkers(4);
-            StormSubmitter.submitTopology("test", conf, builder.createTopology());
-        } else {
+//        if (args != null && args.length > 0) {
+//            conf.setNumWorkers(4);
+//            StormSubmitter.submitTopology("test", conf, builder.createTopology());
+//        } else {
             LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("test", conf, builder.createTopology());
+            cluster.submitTopology("jmsTest", conf, builder.createTopology());
             Thread.sleep(6000000);
-            cluster.killTopology("test");
+            cluster.killTopology("jmsTest");
             cluster.shutdown();
-        }
+//        }
     }
 
     private static class TimeStampMessageBuilder implements MessageBuilder {
         @Override
-        public List<Object> deSerialize(Message envelope) {
-            Long timeStamp = null;
+        public List<Object> deSerialize(JMSMessage envelope) {
             try {
-                timeStamp = envelope.getJMSTimestamp();
+                Long timeStamp = envelope.getMessage().getJMSTimestamp();
                 long currentTime = System.currentTimeMillis();
 
                 System.out.println("latency: " + (currentTime - timeStamp) + " initial time: " + timeStamp + " current: " + currentTime);
                 List<Object> tuples = new ArrayList<Object>();
-                tuples.add(new Long((currentTime - timeStamp)));
+                tuples.add(envelope);
                 return tuples;
             } catch (JMSException e) {
                 e.printStackTrace();
             }
-            return null;
-        }
-
-        @Override
-        public String getQueue(Tuple tuple) {
             return null;
         }
 
@@ -69,33 +64,30 @@ public class JMSPerfTopology {
         }
     }
 
-    private static class Configurator implements JMSConfigurator {
-        private String url = "tcp://localhost:61616";
-
-        private String queueName = "send";
+    private static class SpoutConfigurator implements JMSConfigurator {
+        TopologyConfiguration configuration;
 
         ActiveMQConnectionFactory connectionFactory;
+
         Map<String, Destination> destinations;
 
-        int number;
+        private SpoutConfigurator(TopologyConfiguration configuration) {
+            this.configuration = configuration;
 
-        private Configurator(String url, int number) {
-            this.url = url;
-            this.number = number;
             destinations = new HashMap<String, Destination>();
-            this.connectionFactory = new ActiveMQConnectionFactory(url);
+            this.connectionFactory = new ActiveMQConnectionFactory(configuration.getIp());
             connectionFactory.setOptimizeAcknowledge(true);
             connectionFactory.setAlwaysSessionAsync(false);
-
             Connection connection;
             try {
                 connection = connectionFactory.createConnection();
                 connection.start();
 
                 Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-//                for (int i = 0; i < number; i++) {
-                    this.destinations.put(queueName, session.createQueue(queueName));
-//                }
+                for (int i = 0; i < configuration.getNoQueues(); i++) {
+                    this.destinations.put(configuration.getRecevBaseQueueName() + "_" + i,
+                            session.createQueue(configuration.getRecevBaseQueueName() + "_" + i));
+                }
 
                 connection.close();
             } catch (JMSException e) {
@@ -126,6 +118,78 @@ public class JMSPerfTopology {
         public int queueSize() {
             return 1024;
         }
+
+        @Override
+        public JMSDestinationSelector getDestinationSelector() {
+            return null;
+        }
     }
 
+    private static class BoltConfigurator implements JMSConfigurator {
+        TopologyConfiguration configuration;
+
+        ActiveMQConnectionFactory connectionFactory;
+
+        Map<String, Destination> destinations;
+
+        private BoltConfigurator(TopologyConfiguration configuration) {
+            this.configuration = configuration;
+
+            destinations = new HashMap<String, Destination>();
+            this.connectionFactory = new ActiveMQConnectionFactory(configuration.getIp());
+            connectionFactory.setOptimizeAcknowledge(true);
+            connectionFactory.setAlwaysSessionAsync(false);
+            Connection connection;
+            try {
+                connection = connectionFactory.createConnection();
+                connection.start();
+
+                Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                for (int i = 0; i < configuration.getNoQueues(); i++) {
+                    this.destinations.put(configuration.getSendBaseQueueName() + "_" + i,
+                            session.createQueue(configuration.getSendBaseQueueName() + "_" + i));
+                }
+
+                connection.close();
+            } catch (JMSException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public int ackMode() {
+            return Session.AUTO_ACKNOWLEDGE;
+        }
+
+        public ConnectionFactory connectionFactory() throws Exception {
+            return connectionFactory;
+        }
+
+        public Map<String, Destination> destinations() throws Exception {
+            return destinations;
+        }
+
+        public MessageBuilder getMessageBuilder() {
+            return new TimeStampMessageBuilder();
+        }
+
+        public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
+            outputFieldsDeclarer.declare(new Fields("time1"));
+        }
+
+        public int queueSize() {
+            return 1024;
+        }
+
+        @Override
+        public JMSDestinationSelector getDestinationSelector() {
+            return new PerfDestinationSelector();
+        }
+    }
+
+    private static class PerfDestinationSelector implements JMSDestinationSelector {
+        @Override
+        public String select(Tuple tuple) {
+            return null;
+        }
+    }
 }
