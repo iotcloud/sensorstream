@@ -24,8 +24,8 @@ public class MQTTPerfTopology extends AbstractPerfTopology {
         MQTTSpout spout = new MQTTSpout(new SpoutConfigurator(configuration), null);
         MQTTBolt bolt = new MQTTBolt(new BoltConfigurator(configuration));
 
-        builder.setSpout("word", spout, 1);
-        builder.setBolt("time1", bolt, 1).shuffleGrouping("word");
+        builder.setSpout("mqtt_spout", spout, 1);
+        builder.setBolt("mqtt_bolt", bolt, 1).shuffleGrouping("mqtt_spout");
 
         Config conf = new Config();
 //        if (args != null && args.length > 0) {

@@ -25,8 +25,8 @@ public class JMSPerfTopology extends AbstractPerfTopology {
         JMSSpout spout = new JMSSpout(new SpoutConfigurator(configuration), null);
         JMSBolt bolt = new JMSBolt(new BoltConfigurator(configuration), null);
 
-        builder.setSpout("word", spout, 1);
-        builder.setBolt("time1", bolt, 1).shuffleGrouping("word");
+        builder.setSpout("jms_spout", spout, 1);
+        builder.setBolt("jms_bolt", bolt, 1).shuffleGrouping("jms_spout");
 
         Config conf = new Config();
 //        if (args != null && args.length > 0) {
@@ -185,7 +185,7 @@ public class JMSPerfTopology extends AbstractPerfTopology {
         }
 
         public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-            outputFieldsDeclarer.declare(new Fields("time1"));
+            outputFieldsDeclarer.declare(new Fields("body"));
         }
 
         public int queueSize() {
@@ -194,13 +194,25 @@ public class JMSPerfTopology extends AbstractPerfTopology {
 
         @Override
         public JMSDestinationSelector getDestinationSelector() {
-            return new PerfDestinationSelector();
+            return new PerfDestinationSelector(configuration);
         }
     }
 
     private static class PerfDestinationSelector implements JMSDestinationSelector {
+        private TopologyConfiguration configuration;
+
+        private PerfDestinationSelector(TopologyConfiguration configuration) {
+            this.configuration = configuration;
+        }
+
         @Override
         public String select(Tuple tuple) {
+            JMSMessage mqttMessage = (JMSMessage) tuple.getValue(0);
+            String queue = mqttMessage.getQueue();
+            if (queue != null) {
+                String queueNumber = queue.substring(queue.indexOf("_") + 1);
+                return configuration.getSendBaseQueueName() + "_" + queueNumber;
+            }
             return null;
         }
     }
