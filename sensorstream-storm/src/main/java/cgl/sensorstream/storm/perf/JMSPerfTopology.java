@@ -60,6 +60,18 @@ public class JMSPerfTopology extends AbstractPerfTopology {
 
         @Override
         public JMSMessage serialize(Tuple tuple, Object o) {
+            if (o instanceof Session) {
+                JMSMessage jmsMessage = (JMSMessage) tuple.getValue(0);
+                try {
+                    TextMessage message = ((Session) o).createTextMessage();
+                    if (jmsMessage.getMessage() instanceof TextMessage) {
+                        message.setText(((TextMessage) jmsMessage.getMessage()).getText());
+                    }
+                    return new JMSMessage(message, jmsMessage.getQueue());
+                } catch (JMSException e) {
+                    e.printStackTrace();
+                }
+            }
             return null;
         }
     }
