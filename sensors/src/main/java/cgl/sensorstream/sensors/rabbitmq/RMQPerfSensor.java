@@ -1,16 +1,14 @@
 package cgl.sensorstream.sensors.rabbitmq;
 
 import cgl.iotcloud.core.*;
-import cgl.iotcloud.core.client.SensorClient;
-import cgl.iotcloud.core.msg.SensorTextMessage;
-import cgl.iotcloud.core.sensorsite.SensorDeployDescriptor;
 import cgl.iotcloud.core.sensorsite.SiteContext;
 import cgl.iotcloud.core.transport.Channel;
 import cgl.iotcloud.core.transport.Direction;
+import cgl.iotcloud.core.transport.IdentityConverter;
 import cgl.iotcloud.core.transport.MessageConverter;
 import cgl.iotcloud.transport.rabbitmq.RabbitMQMessage;
+import cgl.sensorstream.sensors.AbstractPerfSensor;
 import com.rabbitmq.client.AMQP;
-import org.apache.commons.cli.*;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,10 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
-public class RMQPerfSensor extends AbstractSensor {
+public class RMQPerfSensor extends AbstractPerfSensor {
     public static final String EXCHANGE_NAME_PROP = "exchange";
-    public static final String SEND_QUEUE_NAME_PROP = "send_queue";
-    public static final String RECEIVE_QUEUE_PROP = "recv_queue";
     public static final String ROUTING_KEY_PROP = "routing_key";
 
     public static final String SEND_INTERVAL = "send_interval";
@@ -74,16 +70,20 @@ public class RMQPerfSensor extends AbstractSensor {
             }
         }, interval);
 
-//        startChannel(receiveChannel, new MessageReceiver() {
-//            @Override
-//            public void onMessage(Object message) {
-//                if (message instanceof SensorTextMessage) {
-//                    System.out.println(((SensorTextMessage) message).getText());
-//                } else {
-//                    System.out.println("Unexpected message");
-//                }
-//            }
-//        });
+        startListen(receiveChannel, new MessageReceiver() {
+            @Override
+            public void onMessage(Object message) {
+                if (message instanceof RabbitMQMessage) {
+                    Map<String, Object> headers = ((RabbitMQMessage) message).getBasicProperties().getHeaders();
+                    Long timeStamp = (Long) headers.get("time");
+                    long currentTime = System.currentTimeMillis();
+
+                    System.out.println("latency: " + (currentTime - timeStamp) + " initial time: " + timeStamp + " current: " + currentTime);
+                } else {
+                    System.out.println("Unexpected message");
+                }
+            }
+        });
 
         LOG.info("Received open request {}", this.context.getId());
     }
@@ -109,12 +109,12 @@ public class RMQPerfSensor extends AbstractSensor {
             sendProps.put("queueName", sendQueue);
             Channel sendChannel = createChannel("sender", sendProps, Direction.OUT, 1024, new FileContentToRabbitMessageConverter());
 
-//            Map receiveProps = new HashMap();
-//            receiveProps.put("queueName", recvQueue);
-//            Channel receiveChannel = createChannel("receiver", receiveProps, Direction.IN, 1024, new ByteToTextConverter());
+            Map receiveProps = new HashMap();
+            receiveProps.put("queueName", recvQueue);
+            Channel receiveChannel = createChannel("receiver", receiveProps, Direction.IN, 1024, new IdentityConverter());
 
             context.addChannel("rabbitmq", sendChannel);
-            // context.addChannel("rabbitmq", receiveChannel);
+            context.addChannel("rabbitmq", receiveChannel);
 
             return context;
         }
@@ -158,58 +158,13 @@ public class RMQPerfSensor extends AbstractSensor {
     }
 
     public static void main(String[] args) {
-        // read the configuration file
-        Map conf = Utils.readConfig();
-        SensorClient client;
+        List<String> sites = new ArrayList<String>();
+        sites.add("local");
+//        sites.add("local-2");
         try {
-            client = new SensorClient(conf);
-            SensorDeployDescriptor deployDescriptor = new SensorDeployDescriptor("sensors-1.0-SNAPSHOT-jar-with-dependencies.jar",
-                    "cgl.sensorstream.sensors.rabbitmq.RMQPerfSensor");
-            parseArgs(args, deployDescriptor);
-
-            deployDescriptor.addProperty(EXCHANGE_NAME_PROP, "testExchange");
-            deployDescriptor.addProperty(ROUTING_KEY_PROP, "testRoute");
-            deployDescriptor.addProperty(SEND_QUEUE_NAME_PROP, "send");
-            deployDescriptor.addProperty(RECEIVE_QUEUE_PROP, "receive");
-
-            List<String> sites = new ArrayList<String>();
-            sites.add("local-1");
-            sites.add("local-2");
-            deployDescriptor.addDeploySites(sites);
-
-            client.deploySensor(deployDescriptor);
+            deploy(args, sites, RMQPerfSensor.class.getCanonicalName());
         } catch (TTransportException e) {
-            e.printStackTrace();
+            LOG.error("Error deploying the sensor", e);
         }
-    }
-
-    public static void parseArgs(String []args, SensorDeployDescriptor descriptor) {
-        Options options = new Options();
-        options.addOption("t", true, "Time interval");
-        options.addOption("f", true, "File name");
-
-        CommandLineParser commandLineParser = new BasicParser();
-        try {
-            CommandLine cmd = commandLineParser.parse(options, args);
-
-            String timeString = cmd.getOptionValue("t", "100");
-            String fileName = cmd.getOptionValue("f");
-            descriptor.addProperty(SEND_INTERVAL, timeString);
-            descriptor.addProperty(FILE_NAME, fileName);
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static String readEntireFile(String filename) throws IOException {
-        FileReader in = new FileReader(filename);
-        StringBuilder contents = new StringBuilder();
-        char[] buffer = new char[4096];
-        int read = 0;
-        do {
-            contents.append(buffer, 0, read);
-            read = in.read(buffer);
-        } while (read >= 0);
-        return contents.toString();
     }
 }
