@@ -20,8 +20,11 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
     public static final String SEND_INTERVAL = "send_interval";
     public static final String FILE_NAME = "file_name";
 
-    public static final String EXCHANGE_NAME_PROP = "exchange";
-    public static final String ROUTING_KEY_PROP = "routing_key";
+    public static final String SEND_EXCHANGE_NAME_PROP = "send_exchange";
+    public static final String SEND_ROUTING_KEY_PROP = "send_routing_key";
+
+    public static final String RECV_EXCHANGE_NAME_PROP = "recv_exchange";
+    public static final String RECV_ROUTING_KEY_PROP = "recv_routing_key";
 
     public static final String SENSOR_NAME = "name";
 
@@ -72,8 +75,13 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
         deployDescriptor.addProperty(FILE_NAME, configuration.getFileName());
         deployDescriptor.addProperty(SEND_QUEUE_NAME_PROP, configuration.getBaseSendQueueName() + "_" + sensorNo);
         deployDescriptor.addProperty(RECEIVE_QUEUE_PROP, configuration.getBaseRecvQueueName() + "_" + sensorNo);
-        deployDescriptor.addProperty(EXCHANGE_NAME_PROP, "perfSensor");
-        deployDescriptor.addProperty(ROUTING_KEY_PROP, configuration.getBaseSendQueueName() + "_" + sensorNo);
+
+        deployDescriptor.addProperty(SEND_EXCHANGE_NAME_PROP, "perfSensor");
+        deployDescriptor.addProperty(SEND_ROUTING_KEY_PROP, configuration.getBaseSendQueueName() + "_" + sensorNo);
+
+        deployDescriptor.addProperty(RECV_EXCHANGE_NAME_PROP, "perfSensor");
+        deployDescriptor.addProperty(RECV_ROUTING_KEY_PROP, configuration.getBaseRecvQueueName() + "_" + sensorNo);
+
         deployDescriptor.addProperty(SENSOR_NAME, "perf_" + sensorNo);
     }
 

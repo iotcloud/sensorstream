@@ -88,10 +88,14 @@ public class RMQPerfSensor extends AbstractPerfSensor {
         @Override
         public SensorContext configure(SiteContext siteContext, Map conf) {
             SensorContext context = new SensorContext(new SensorId("rabbitChat", "general"));
-            String exchange = (String) conf.get(EXCHANGE_NAME_PROP);
+            String exchange = (String) conf.get(SEND_EXCHANGE_NAME_PROP);
             String sendQueue = (String) conf.get(SEND_QUEUE_NAME_PROP);
+
+            String recvExchange = (String) conf.get(RECV_EXCHANGE_NAME_PROP);
+
             String recvQueue = (String) conf.get(RECEIVE_QUEUE_PROP);
-            String routingKey = (String) conf.get(ROUTING_KEY_PROP);
+            String routingKey = (String) conf.get(SEND_ROUTING_KEY_PROP);
+            String recvRoutingKey = (String) conf.get(RECV_ROUTING_KEY_PROP);
             String fileName = (String) conf.get(FILE_NAME);
 
             String sendInterval = (String) conf.get(SEND_INTERVAL);
@@ -107,6 +111,8 @@ public class RMQPerfSensor extends AbstractPerfSensor {
 
             Map receiveProps = new HashMap();
             receiveProps.put("queueName", recvQueue);
+            receiveProps.put("exchange", recvExchange);
+            receiveProps.put("routingKey", recvRoutingKey);
             Channel receiveChannel = createChannel("receiver", receiveProps, Direction.IN, 1024, new IdentityConverter());
 
             context.addChannel("rabbitmq", sendChannel);

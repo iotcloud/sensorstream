@@ -110,7 +110,8 @@ public class RRPerfTopology extends AbstractPerfTopology {
         public List<RabbitMQDestination> getQueueName() {
             List<RabbitMQDestination> list = new ArrayList<RabbitMQDestination>();
             for (int i = 0; i < configuration.getNoQueues(); i++) {
-                list.add(new RabbitMQDestination(configuration.getRecevBaseQueueName() + "_" + i));
+                list.add(new RabbitMQDestination(configuration.getRecevBaseQueueName() + "_" + i,
+                        "perfSensor", configuration.getRecevBaseQueueName() + "_" + i));
             }
             return list;
         }
@@ -174,7 +175,7 @@ public class RRPerfTopology extends AbstractPerfTopology {
         public List<RabbitMQDestination> getQueueName() {
             List<RabbitMQDestination> list = new ArrayList<RabbitMQDestination>();
             for (int i = 0; i < configuration.getNoQueues(); i++) {
-                list.add(new RabbitMQDestination(configuration.getSendBaseQueueName() + "_" + i, "perf", configuration.getSendBaseQueueName() + "_" + i));
+                list.add(new RabbitMQDestination(configuration.getSendBaseQueueName() + "_" + i, "perfSensor", configuration.getSendBaseQueueName() + "_" + i));
             }
             return list;
         }
