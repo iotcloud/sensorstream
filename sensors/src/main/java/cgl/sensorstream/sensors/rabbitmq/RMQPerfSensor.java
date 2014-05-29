@@ -21,12 +21,6 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
 public class RMQPerfSensor extends AbstractPerfSensor {
-    public static final String EXCHANGE_NAME_PROP = "exchange";
-    public static final String ROUTING_KEY_PROP = "routing_key";
-
-    public static final String SEND_INTERVAL = "send_interval";
-    public static final String FILE_NAME = "file_name";
-
     private static Logger LOG = LoggerFactory.getLogger(RMQPerfSensor.class);
 
     private SensorContext context;
@@ -35,6 +29,8 @@ public class RMQPerfSensor extends AbstractPerfSensor {
     public Configurator getConfigurator(Map conf) {
         return new RabbitConfigurator();
     }
+
+
 
     @Override
     public void open(SensorContext context) {
