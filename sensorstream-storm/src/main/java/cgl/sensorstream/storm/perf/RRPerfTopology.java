@@ -88,7 +88,7 @@ public class RRPerfTopology extends AbstractPerfTopology {
 
         @Override
         public boolean isAutoAcking() {
-            return false;
+            return true;
         }
 
         @Override
