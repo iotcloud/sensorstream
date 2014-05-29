@@ -38,8 +38,8 @@ public class RRPerfTopology extends AbstractPerfTopology {
 
         Config conf = new Config();
 //        if (args != null && args.length > 0) {
-            conf.setNumWorkers(6);
-            StormSubmitter.submitTopology("test", conf, builder.createTopology());
+            //conf.setNumWorkers(6);
+            //StormSubmitter.submitTopology("test", conf, builder.createTopology());
 //        } else {
             LocalCluster cluster = new LocalCluster();
             cluster.submitTopology("test", conf, builder.createTopology());
@@ -51,19 +51,23 @@ public class RRPerfTopology extends AbstractPerfTopology {
 
     private static class TimeStampMessageBuilder implements MessageBuilder {
         @Override
-        public List<Object> deSerialize(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
-            Map<String, Object> headers = properties.getHeaders();
+        public List<Object> deSerialize(RabbitMQMessage message) {
+            Map<String, Object> headers = message.getProperties().getHeaders();
             Long timeStamp = (Long) headers.get("time");
             long currentTime = System.currentTimeMillis();
 
             System.out.println("latency: " + (currentTime - timeStamp) + " initial time: " + timeStamp + " current: " + currentTime);
             List<Object> tuples = new ArrayList<Object>();
-            tuples.add(new Long((currentTime - timeStamp)));
+            tuples.add(message);
             return tuples;
         }
 
         @Override
         public RabbitMQMessage serialize(Tuple tuple) {
+            Object message = tuple.getValue(0);
+            if (message instanceof  RabbitMQMessage){
+                return (RabbitMQMessage) message;
+            }
             return null;
         }
     }

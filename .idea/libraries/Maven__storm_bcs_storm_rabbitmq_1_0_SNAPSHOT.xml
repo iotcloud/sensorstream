@@ -8,6 +8,14 @@
     </JAVADOC>
     <SOURCES>
       <root url="jar://$MAVEN_REPOSITORY$/storm-bcs/storm-rabbitmq/1.0-SNAPSHOT/storm-rabbitmq-1.0-SNAPSHOT-sources.jar!/" />
+      <root url="file://$PROJECT_DIR$/../iotcloud2/core/src/main/java" />
+      <root url="file://$PROJECT_DIR$/../iotcloud2/core/src/test/java" />
+      <root url="file://$PROJECT_DIR$/../iotcloud2/examples/src/main/java" />
+      <root url="file://$PROJECT_DIR$/../iotcloud2/transports/mqtt/src/main/java" />
+      <root url="file://$PROJECT_DIR$/../iotcloud2/transports/kafka/src/main/java" />
+      <root url="file://$PROJECT_DIR$/../iotcloud2/transports/kestrel/src/main/java" />
+      <root url="file://$PROJECT_DIR$/../iotcloud2/transports/rabbitmq/src/main/java" />
+      <root url="file://$PROJECT_DIR$/../iotcloud2/transports/rabbitmq/src/main/java" />
     </SOURCES>
   </library>
 </component>
