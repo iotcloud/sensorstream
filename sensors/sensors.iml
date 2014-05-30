@@ -48,6 +48,7 @@
     <orderEntry type="library" scope="PROVIDED" name="Maven: iotcloud2:iotcloud-rabbitmq:1.0-SNAPSHOT" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: com.rabbitmq:amqp-client:3.2.4" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: iotcloud2:iotcloud-mqtt:1.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: iotcloud2:iotcloud-kestrel:1.0-SNAPSHOT" level="project" />
     <orderEntry type="library" name="Maven: commons-cli:commons-cli:1.2" level="project" />
   </component>
 </module>
