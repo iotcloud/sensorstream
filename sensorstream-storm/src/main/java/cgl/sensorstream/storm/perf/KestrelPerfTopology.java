@@ -13,10 +13,7 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class KestrelPerfTopology extends AbstractPerfTopology {
     public static void main(String[] args) throws Exception {
@@ -85,6 +82,22 @@ public class KestrelPerfTopology extends AbstractPerfTopology {
 
         public Map<String, KestrelDestination> destinations() {
             Map<String, KestrelDestination> destinations = new HashMap<String, KestrelDestination>();
+
+            String url = configuration.getIp();
+            String host;
+            int port = 2229;
+            if (url.contains(":")) {
+                host = url.substring(0, url.indexOf(":"));
+                port = Integer.parseInt(url.substring(url.indexOf(":") + 1));
+            } else {
+                host = url;
+            }
+
+            for (int i = 0; i < configuration.getNoQueues(); i++) {
+                KestrelDestination destination = new KestrelDestination(host, port, Arrays.asList(configuration.getRecevBaseQueueName() + "_" + i));
+                destinations.put(host + ":" + port, destination);
+            }
+
             return destinations;
         }
 
@@ -134,6 +147,22 @@ public class KestrelPerfTopology extends AbstractPerfTopology {
 
         public Map<String, KestrelDestination> destinations() {
             Map<String, KestrelDestination> destinations = new HashMap<String, KestrelDestination>();
+
+            String url = configuration.getIp();
+            String host;
+            int port = 2229;
+            if (url.contains(":")) {
+                host = url.substring(0, url.indexOf(":"));
+                port = Integer.parseInt(url.substring(url.indexOf(":") + 1));
+            } else {
+                host = url;
+            }
+
+            for (int i = 0; i < configuration.getNoQueues(); i++) {
+                KestrelDestination destination = new KestrelDestination(host, port, Arrays.asList(configuration.getSendBaseQueueName() + "_" + i));
+                destinations.put(host + ":" + port, destination);
+            }
+
             return destinations;
         }
 
