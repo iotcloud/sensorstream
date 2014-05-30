@@ -26,6 +26,8 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
     public static final String RECV_EXCHANGE_NAME_PROP = "recv_exchange";
     public static final String RECV_ROUTING_KEY_PROP = "recv_routing_key";
 
+    public static final String SERVER = "server";
+
     public static final String SENSOR_NAME = "name";
 
     public static void deploy(String args[], List<String> sites, String className) throws TTransportException {
@@ -81,6 +83,8 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
 
         deployDescriptor.addProperty(RECV_EXCHANGE_NAME_PROP, "perfSensor");
         deployDescriptor.addProperty(RECV_ROUTING_KEY_PROP, configuration.getBaseRecvQueueName() + "_" + sensorNo);
+
+        deployDescriptor.addProperty(SERVER, "s1");
 
         deployDescriptor.addProperty(SENSOR_NAME, "perf_" + sensorNo);
     }

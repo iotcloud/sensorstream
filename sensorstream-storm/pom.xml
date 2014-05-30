@@ -119,6 +119,17 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>storm-bcs</groupId>
+            <artifactId>storm-kestrel</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.storm</groupId>
+                    <artifactId>storm-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
             <groupId>org.fusesource.mqtt-client</groupId>
             <artifactId>mqtt-client</artifactId>
             <version>${mqtt.version}</version>

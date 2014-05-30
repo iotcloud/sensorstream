@@ -114,6 +114,7 @@ public class KestrelPerfSensor extends AbstractPerfSensor {
             String recvQueue = (String) conf.get(RECEIVE_QUEUE_PROP);
             String fileName = (String) conf.get(FILE_NAME);
             String sensorName = (String) conf.get(SENSOR_NAME);
+            String server = (String) conf.get(SERVER);
 
             SensorContext context = new SensorContext(new SensorId(sensorName, "general"));
 
@@ -124,10 +125,12 @@ public class KestrelPerfSensor extends AbstractPerfSensor {
 
             Map sendProps = new HashMap();
             sendProps.put("queueName", sendQueue);
+            sendProps.put("server", server);
             Channel sendChannel = createChannel("sender", sendProps, Direction.OUT, 1024, new KestrelOutMessageConverter());
 
             Map receiveProps = new HashMap();
             receiveProps.put("queueName", recvQueue);
+            receiveProps.put("server", server);
             Channel receiveChannel = createChannel("receiver", receiveProps, Direction.IN, 1024, new IdentityConverter());
 
             context.addChannel("kestrel", sendChannel);
