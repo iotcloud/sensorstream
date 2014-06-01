@@ -26,7 +26,6 @@ public class JMSPerfTopology extends AbstractPerfTopology {
         JMSBolt bolt = new JMSBolt(new BoltConfigurator(configuration), null);
 
         builder.setSpout("jms_spout", spout, 1);
-        builder.setSpout()
         builder.setBolt("jms_bolt", bolt, 1).shuffleGrouping("jms_spout");
 
         Config conf = new Config();
