@@ -1,13 +1,14 @@
 package cgl.sensorstream.storm.perf;
 
 import java.io.Serializable;
+import java.util.List;
 
 public class TopologyConfiguration implements Serializable {
     private int noWorkers = 4;
 
     private String topologyName = "perf";
 
-    private String ip;
+    private List<String> ip;
 
     private int noQueues;
 
@@ -15,7 +16,7 @@ public class TopologyConfiguration implements Serializable {
 
     private String sendBaseQueueName;
 
-    public TopologyConfiguration(String ip, int noQueues, String baseQueueName, String sendBaseQueueName) {
+    public TopologyConfiguration(List<String> ip, int noQueues, String baseQueueName, String sendBaseQueueName) {
         this.ip = ip;
         this.noQueues = noQueues;
         this.recevBaseQueueName = baseQueueName;
@@ -30,7 +31,7 @@ public class TopologyConfiguration implements Serializable {
         return topologyName;
     }
 
-    public String getIp() {
+    public List<String> getIp() {
         return ip;
     }
 

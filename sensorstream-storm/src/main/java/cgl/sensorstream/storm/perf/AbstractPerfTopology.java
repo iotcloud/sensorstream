@@ -1,6 +1,15 @@
 package cgl.sensorstream.storm.perf;
 
+import backtype.storm.Config;
+import backtype.storm.LocalCluster;
+import backtype.storm.StormSubmitter;
+import backtype.storm.generated.AlreadyAliveException;
+import backtype.storm.generated.InvalidTopologyException;
+import backtype.storm.topology.TopologyBuilder;
 import org.apache.commons.cli.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class AbstractPerfTopology {
     public static TopologyConfiguration parseArgs(String []args) {
@@ -16,14 +25,20 @@ public abstract class AbstractPerfTopology {
         try {
             CommandLine cmd = commandLineParser.parse(options, args);
 
-            String ip = cmd.getOptionValue("i");
+            String ips = cmd.getOptionValue("i");
             String noQueues =  cmd.getOptionValue("n");
             String rQueue =  cmd.getOptionValue("qr");
             String sQueue = cmd.getOptionValue("qs");
             String tpName = cmd.getOptionValue("name");
             String noWorkers = cmd.getOptionValue("nw");
 
-            TopologyConfiguration tpConfiguration = new TopologyConfiguration(ip, Integer.parseInt(noQueues), rQueue, sQueue);
+            String[] results = ips.split(",");
+            List<String> ipList = new ArrayList<String>();
+            for (String ip : results) {
+                ipList.add(ip.trim());
+            }
+
+            TopologyConfiguration tpConfiguration = new TopologyConfiguration(ipList, Integer.parseInt(noQueues), rQueue, sQueue);
             if (tpName != null) {
                 tpConfiguration.setTopologyName(tpName);
             }
@@ -37,5 +52,29 @@ public abstract class AbstractPerfTopology {
         }
 
         return null;
+    }
+
+    public static boolean isLocal(String []args) {
+        for (String s : args) {
+            if (s.equals("local")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static void submit(String []args, String topologyName,
+                              TopologyBuilder builder, TopologyConfiguration configuration) throws Exception {
+        Config conf = new Config();
+        if (!isLocal(args)) {
+            conf.setNumWorkers(configuration.getNoWorkers());
+            StormSubmitter.submitTopology(args[0], conf, builder.createTopology());
+        } else {
+            LocalCluster cluster = new LocalCluster();
+            cluster.submitTopology(topologyName, conf, builder.createTopology());
+            Thread.sleep(6000000);
+            cluster.killTopology(topologyName);
+            cluster.shutdown();
+        }
     }
 }

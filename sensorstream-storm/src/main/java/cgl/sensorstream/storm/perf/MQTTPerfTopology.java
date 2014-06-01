@@ -2,6 +2,7 @@ package cgl.sensorstream.storm.perf;
 
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
+import backtype.storm.StormSubmitter;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
@@ -20,24 +21,16 @@ public class MQTTPerfTopology extends AbstractPerfTopology {
         TopologyBuilder builder = new TopologyBuilder();
 
         TopologyConfiguration configuration = parseArgs(args);
+        int i = 0;
+        for (String ip : configuration.getIp()) {
+            MQTTSpout spout = new MQTTSpout(new SpoutConfigurator(configuration, ip), null);
+            MQTTBolt bolt = new MQTTBolt(new BoltConfigurator(configuration, ip));
+            builder.setSpout("mqtt_spout_" + i, spout, 1);
+            builder.setBolt("mqtt_bolt_" + i, bolt, 1).shuffleGrouping("mqtt_spout_" + i);
+            i++;
+        }
 
-        MQTTSpout spout = new MQTTSpout(new SpoutConfigurator(configuration), null);
-        MQTTBolt bolt = new MQTTBolt(new BoltConfigurator(configuration));
-
-        builder.setSpout("mqtt_spout", spout, 1);
-        builder.setBolt("mqtt_bolt", bolt, 1).shuffleGrouping("mqtt_spout");
-
-        Config conf = new Config();
-//        if (args != null && args.length > 0) {
-//            conf.setNumWorkers(configuration.getNoWorkers());
-//            StormSubmitter.submitTopology(args[0], conf, builder.createTopology());
-//        } else {
-        LocalCluster cluster = new LocalCluster();
-        cluster.submitTopology("mqttTest", conf, builder.createTopology());
-        Thread.sleep(6000000);
-        cluster.killTopology("mqttTest");
-        cluster.shutdown();
-//        }
+        submit(args, "mqttTest", builder, configuration);
     }
 
     private static class TimeStampMessageBuilder implements MessageBuilder {
@@ -74,9 +67,11 @@ public class MQTTPerfTopology extends AbstractPerfTopology {
 
     private static class SpoutConfigurator implements MQTTConfigurator {
         private TopologyConfiguration configuration;
+        private String ip;
 
-        private SpoutConfigurator(TopologyConfiguration configuration) {
+        public SpoutConfigurator(TopologyConfiguration configuration, String ip) {
             this.configuration = configuration;
+            this.ip = ip;
         }
 
         public MessageBuilder getMessageBuilder() {
@@ -90,7 +85,7 @@ public class MQTTPerfTopology extends AbstractPerfTopology {
 
         @Override
         public String getURL() {
-            return configuration.getIp();
+            return ip;
         }
 
         @Override
@@ -119,8 +114,11 @@ public class MQTTPerfTopology extends AbstractPerfTopology {
     private static class BoltConfigurator implements MQTTConfigurator {
         private TopologyConfiguration configuration;
 
-        private BoltConfigurator(TopologyConfiguration configuration) {
+        private String ip;
+
+        private BoltConfigurator(TopologyConfiguration configuration, String ip) {
             this.configuration = configuration;
+            this.ip = ip;
         }
 
         public MessageBuilder getMessageBuilder() {
@@ -134,7 +132,7 @@ public class MQTTPerfTopology extends AbstractPerfTopology {
 
         @Override
         public String getURL() {
-            return configuration.getIp();
+            return ip;
         }
 
         @Override

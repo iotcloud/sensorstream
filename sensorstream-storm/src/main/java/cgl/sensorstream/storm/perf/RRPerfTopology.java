@@ -1,16 +1,9 @@
 package cgl.sensorstream.storm.perf;
 
-import backtype.storm.Config;
-import backtype.storm.LocalCluster;
-import backtype.storm.StormSubmitter;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Envelope;
-import com.ss.mqtt.DestinationSelector;
-import com.ss.mqtt.MQTTMessage;
 import com.ss.rabbitmq.*;
 import com.ss.rabbitmq.bolt.RabbitMQBolt;
 
@@ -30,23 +23,15 @@ public class RRPerfTopology extends AbstractPerfTopology {
             }
         };
 
-        RabbitMQSpout spout = new RabbitMQSpout(new SpoutConfigurator(configuration), r);
-        RabbitMQBolt bolt = new RabbitMQBolt(new BoltConfigurator(configuration), r);
-
-        builder.setSpout("rabbit_spout", spout, 1);
-        builder.setBolt("rabbit_bolt", bolt, 2).shuffleGrouping("rabbit_spout");
-
-        Config conf = new Config();
-//        if (args != null && args.length > 0) {
-            //conf.setNumWorkers(6);
-            //StormSubmitter.submitTopology("test", conf, builder.createTopology());
-//        } else {
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("test", conf, builder.createTopology());
-            Thread.sleep(60000);
-            cluster.killTopology("test");
-            cluster.shutdown();
-//        }
+        int i = 0;
+        for (String ip : configuration.getIp()) {
+            RabbitMQSpout spout = new RabbitMQSpout(new SpoutConfigurator(configuration, ip), r);
+            RabbitMQBolt bolt = new RabbitMQBolt(new BoltConfigurator(configuration, ip), r);
+            builder.setSpout("rabbit_spout_" + i, spout, 1);
+            builder.setBolt("rabbit_bolt_" + i, bolt, 2).shuffleGrouping("rabbit_spout_" + i);
+            i++;
+        }
+        submit(args, "kestrelTest", builder, configuration);
     }
 
     private static class TimeStampMessageBuilder implements MessageBuilder {
@@ -77,13 +62,16 @@ public class RRPerfTopology extends AbstractPerfTopology {
 
         private TopologyConfiguration configuration;
 
-        private SpoutConfigurator(TopologyConfiguration configuration) {
+        private String ip;
+
+        private SpoutConfigurator(TopologyConfiguration configuration, String ip) {
             this.configuration = configuration;
+            this.ip = ip;
         }
 
         @Override
         public String getURL() {
-            return configuration.getIp();
+            return ip;
         }
 
         @Override
@@ -142,13 +130,16 @@ public class RRPerfTopology extends AbstractPerfTopology {
 
         private TopologyConfiguration configuration;
 
-        private BoltConfigurator(TopologyConfiguration configuration) {
+        private String ip;
+
+        private BoltConfigurator(TopologyConfiguration configuration, String ip) {
             this.configuration = configuration;
+            this.ip = ip;
         }
 
         @Override
         public String getURL() {
-            return configuration.getIp();
+            return ip;
         }
 
         @Override

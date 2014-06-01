@@ -2,6 +2,7 @@ package cgl.sensorstream.storm.perf;
 
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
+import backtype.storm.StormSubmitter;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
@@ -17,26 +18,16 @@ import java.util.*;
 public class KestrelPerfTopology extends AbstractPerfTopology {
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
-
         TopologyConfiguration configuration = parseArgs(args);
-
-        KestrelSpout spout = new KestrelSpout(new SpoutConfigurator(configuration));
-        KestrelBolt bolt = new KestrelBolt(new BoltConfigurator(configuration));
-
-        builder.setSpout("kestrel_spout", spout, 1);
-        builder.setBolt("kestrel_bolt", bolt, 1).shuffleGrouping("kestrel_spout");
-
-        Config conf = new Config();
-//        if (args != null && args.length > 0) {
-//            conf.setNumWorkers(4);
-//            StormSubmitter.submitTopology("test", conf, builder.createTopology());
-//        } else {
-        LocalCluster cluster = new LocalCluster();
-        cluster.submitTopology("kestrelTest", conf, builder.createTopology());
-        Thread.sleep(6000000);
-        cluster.killTopology("kestrelTest");
-        cluster.shutdown();
-//        }
+        int i = 0;
+        for (String ip : configuration.getIp()) {
+            KestrelSpout spout = new KestrelSpout(new SpoutConfigurator(configuration, ip));
+            KestrelBolt bolt = new KestrelBolt(new BoltConfigurator(configuration, ip));
+            builder.setSpout("kestrel_spout_" + i, spout, 1);
+            builder.setBolt("kestrel_bolt_" + i, bolt, 1).shuffleGrouping("kestrel_spout_" + i);
+            i++;
+        }
+        submit(args, "kestrelTest", builder, configuration);
     }
 
     private static class TimeStampMessageBuilder implements KestrelMessageBuilder {
@@ -80,15 +71,14 @@ public class KestrelPerfTopology extends AbstractPerfTopology {
 
         int port = 2229;
 
-        private SpoutConfigurator(TopologyConfiguration configuration) {
+        private SpoutConfigurator(TopologyConfiguration configuration, String ip) {
             this.configuration = configuration;
 
-            String url = configuration.getIp();
-            if (url.contains(":")) {
-                host = url.substring(0, url.indexOf(":"));
-                port = Integer.parseInt(url.substring(url.indexOf(":") + 1));
+            if (ip.contains(":")) {
+                host = ip.substring(0, ip.indexOf(":"));
+                port = Integer.parseInt(ip.substring(ip.indexOf(":") + 1));
             } else {
-                host = url;
+                host = ip;
             }
         }
 
@@ -154,17 +144,16 @@ public class KestrelPerfTopology extends AbstractPerfTopology {
 
         int port;
 
-        private BoltConfigurator(TopologyConfiguration configuration) {
+        private BoltConfigurator(TopologyConfiguration configuration, String ip) {
             this.configuration = configuration;
 
             this.configuration = configuration;
 
-            String url = configuration.getIp();
-            if (url.contains(":")) {
-                host = url.substring(0, url.indexOf(":"));
-                port = Integer.parseInt(url.substring(url.indexOf(":") + 1));
+            if (ip.contains(":")) {
+                host = ip.substring(0, ip.indexOf(":"));
+                port = Integer.parseInt(ip.substring(ip.indexOf(":") + 1));
             } else {
-                host = url;
+                host = ip;
             }
         }
 

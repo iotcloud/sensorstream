@@ -2,6 +2,7 @@ package cgl.sensorstream.storm.perf;
 
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
+import backtype.storm.StormSubmitter;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
@@ -22,23 +23,17 @@ public class JMSPerfTopology extends AbstractPerfTopology {
 
         TopologyConfiguration configuration = parseArgs(args);
 
-        JMSSpout spout = new JMSSpout(new SpoutConfigurator(configuration), null);
-        JMSBolt bolt = new JMSBolt(new BoltConfigurator(configuration), null);
+        int i = 0;
+        for (String ip : configuration.getIp()) {
+            JMSSpout spout = new JMSSpout(new SpoutConfigurator(configuration, ip), null);
+            builder.setSpout("jms_spout_" + i, spout, 1);
 
-        builder.setSpout("jms_spout", spout, 1);
-        builder.setBolt("jms_bolt", bolt, 1).shuffleGrouping("jms_spout");
+            JMSBolt bolt = new JMSBolt(new BoltConfigurator(configuration, ip), null);
+            builder.setBolt("jms_bolt_" + i, bolt, 1).shuffleGrouping("jms_spout_" + i);
+            i++;
+        }
 
-        Config conf = new Config();
-//        if (args != null && args.length > 0) {
-//            conf.setNumWorkers(4);
-//            StormSubmitter.submitTopology("test", conf, builder.createTopology());
-//        } else {
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("jmsTest", conf, builder.createTopology());
-            Thread.sleep(6000000);
-            cluster.killTopology("jmsTest");
-            cluster.shutdown();
-//        }
+        submit(args, "jmsTest", builder, configuration);
     }
 
     private static class TimeStampMessageBuilder implements MessageBuilder {
@@ -99,11 +94,11 @@ public class JMSPerfTopology extends AbstractPerfTopology {
 
         Map<String, Destination> destinations;
 
-        private SpoutConfigurator(TopologyConfiguration configuration) {
+        private SpoutConfigurator(TopologyConfiguration configuration, String ip) {
             this.configuration = configuration;
 
             destinations = new HashMap<String, Destination>();
-            this.connectionFactory = new ActiveMQConnectionFactory(configuration.getIp());
+            this.connectionFactory = new ActiveMQConnectionFactory(ip);
             connectionFactory.setOptimizeAcknowledge(true);
             connectionFactory.setAlwaysSessionAsync(false);
             Connection connection;
@@ -140,7 +135,7 @@ public class JMSPerfTopology extends AbstractPerfTopology {
         }
 
         public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-            outputFieldsDeclarer.declare(new Fields("time1"));
+            outputFieldsDeclarer.declare(new Fields("jms_spout_out"));
         }
 
         public int queueSize() {
@@ -160,11 +155,11 @@ public class JMSPerfTopology extends AbstractPerfTopology {
 
         Map<String, Destination> destinations;
 
-        private BoltConfigurator(TopologyConfiguration configuration) {
+        private BoltConfigurator(TopologyConfiguration configuration, String ip) {
             this.configuration = configuration;
 
             destinations = new HashMap<String, Destination>();
-            this.connectionFactory = new ActiveMQConnectionFactory(configuration.getIp());
+            this.connectionFactory = new ActiveMQConnectionFactory(ip);
             connectionFactory.setOptimizeAcknowledge(true);
             connectionFactory.setAlwaysSessionAsync(false);
             Connection connection;
@@ -201,7 +196,7 @@ public class JMSPerfTopology extends AbstractPerfTopology {
         }
 
         public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-            outputFieldsDeclarer.declare(new Fields("body"));
+            outputFieldsDeclarer.declare(new Fields("jms_bolt_out"));
         }
 
         public int queueSize() {
