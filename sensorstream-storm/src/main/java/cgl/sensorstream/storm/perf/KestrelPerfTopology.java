@@ -8,7 +8,6 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import com.ss.kestrel.*;
 import com.ss.kestrel.bolt.KestrelBolt;
-import org.apache.activemq.ActiveMQConnectionFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -45,17 +44,22 @@ public class KestrelPerfTopology extends AbstractPerfTopology {
         public List<Object> deSerialize(KestrelMessage envelope) {
             try {
                 byte []body = envelope.getData();
-                String bodyS = new String(body);
-                BufferedReader reader = new BufferedReader(new StringReader(bodyS));
-                String timeStampS = reader.readLine();
-                Long timeStamp = Long.parseLong(timeStampS);
-
-                long currentTime = System.currentTimeMillis();
-
-                System.out.println("latency: " + (currentTime - timeStamp) + " initial time: " + timeStamp + " current: " + currentTime);
+                String bodyS = new String(body, "UTF-8");
                 List<Object> tuples = new ArrayList<Object>();
-                tuples.add(envelope);
-                return tuples;
+                if (!bodyS.trim().equals("")) {
+                    BufferedReader reader = new BufferedReader(new StringReader(bodyS));
+                    String timeStampS = reader.readLine();
+                    Long timeStamp = Long.parseLong(timeStampS);
+
+                    long currentTime = System.currentTimeMillis();
+
+                    System.out.println("latency: " + (currentTime - timeStamp) + " initial time: " + timeStamp + " current: " + currentTime);
+                    tuples.add(envelope);
+                    return tuples;
+                } else {
+                    tuples.add(new KestrelMessage("hello".getBytes(), envelope.getId(), envelope.getQueue()));
+                    return tuples;
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -72,32 +76,41 @@ public class KestrelPerfTopology extends AbstractPerfTopology {
     private static class SpoutConfigurator implements KestrelConfigurator {
         TopologyConfiguration configuration;
 
+        String host;
+
+        int port = 2229;
+
         private SpoutConfigurator(TopologyConfiguration configuration) {
             this.configuration = configuration;
-        }
-
-        public int ackMode() {
-            return 0;
-        }
-
-        public Map<String, KestrelDestination> destinations() {
-            Map<String, KestrelDestination> destinations = new HashMap<String, KestrelDestination>();
 
             String url = configuration.getIp();
-            String host;
-            int port = 2229;
             if (url.contains(":")) {
                 host = url.substring(0, url.indexOf(":"));
                 port = Integer.parseInt(url.substring(url.indexOf(":") + 1));
             } else {
                 host = url;
             }
+        }
 
+        @Override
+        public String getHost() {
+            return host;
+        }
+
+        @Override
+        public int getPort() {
+            return port;
+        }
+
+        public int ackMode() {
+            return 0;
+        }
+
+        public List<String> destinations() {
+            List<String> destinations = new ArrayList<String>();
             for (int i = 0; i < configuration.getNoQueues(); i++) {
-                KestrelDestination destination = new KestrelDestination(host, port, Arrays.asList(configuration.getRecevBaseQueueName() + "_" + i));
-                destinations.put(host + ":" + port, destination);
+                destinations.add(configuration.getRecevBaseQueueName() + "_" + i);
             }
-
             return destinations;
         }
 
@@ -114,7 +127,7 @@ public class KestrelPerfTopology extends AbstractPerfTopology {
         }
 
         @Override
-        public long expirationTime() {
+        public int expirationTime() {
             return 30000;
         }
 
@@ -137,32 +150,43 @@ public class KestrelPerfTopology extends AbstractPerfTopology {
     private static class BoltConfigurator implements KestrelConfigurator {
         TopologyConfiguration configuration;
 
+        String host;
+
+        int port;
+
         private BoltConfigurator(TopologyConfiguration configuration) {
             this.configuration = configuration;
-        }
 
-        public int ackMode() {
-            return 0;
-        }
-
-        public Map<String, KestrelDestination> destinations() {
-            Map<String, KestrelDestination> destinations = new HashMap<String, KestrelDestination>();
+            this.configuration = configuration;
 
             String url = configuration.getIp();
-            String host;
-            int port = 2229;
             if (url.contains(":")) {
                 host = url.substring(0, url.indexOf(":"));
                 port = Integer.parseInt(url.substring(url.indexOf(":") + 1));
             } else {
                 host = url;
             }
+        }
 
+        @Override
+        public String getHost() {
+            return host;
+        }
+
+        @Override
+        public int getPort() {
+            return port;
+        }
+
+        public int ackMode() {
+            return 0;
+        }
+
+        public List<String> destinations() {
+            List<String> destinations = new ArrayList<String>();
             for (int i = 0; i < configuration.getNoQueues(); i++) {
-                KestrelDestination destination = new KestrelDestination(host, port, Arrays.asList(configuration.getSendBaseQueueName() + "_" + i));
-                destinations.put(host + ":" + port, destination);
+                destinations.add(configuration.getSendBaseQueueName() + "_" + i);
             }
-
             return destinations;
         }
 
@@ -179,7 +203,7 @@ public class KestrelPerfTopology extends AbstractPerfTopology {
         }
 
         @Override
-        public long expirationTime() {
+        public int expirationTime() {
             return 30000;
         }
 

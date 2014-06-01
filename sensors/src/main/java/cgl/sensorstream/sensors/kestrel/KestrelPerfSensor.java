@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -75,9 +76,13 @@ public class KestrelPerfSensor extends AbstractPerfSensor {
                     } catch (IOException e) {
                         LOG.error("Error occurred while reading the bytes", e);
                     }
+                    try {
                     Long timeStamp = Long.parseLong(timeStampS);
                     long currentTime = System.currentTimeMillis();
                     LOG.info("latency: " + (currentTime - timeStamp) + " initial time: " + timeStamp + " current: " + currentTime);
+                    } catch (NumberFormatException e) {
+                        LOG.warn("Unexpected message");
+                    }
                 } else {
                     LOG.error("Unexpected message");
                 }
