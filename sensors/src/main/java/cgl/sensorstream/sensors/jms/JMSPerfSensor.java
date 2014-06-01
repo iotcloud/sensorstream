@@ -15,7 +15,9 @@ import org.slf4j.LoggerFactory;
 import javax.jms.JMSException;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -73,8 +75,17 @@ public class JMSPerfSensor extends AbstractPerfSensor {
                 if (message instanceof TextMessage) {
                     long currentTime = System.currentTimeMillis();
                     try {
-                        long timeStamp = ((TextMessage) message).getJMSTimestamp();
-                        LOG.info("latency: " + (currentTime - timeStamp) + " initial time: " + timeStamp + " current: " + currentTime);
+                        String bodyS = ((TextMessage) message).getText();
+                        BufferedReader reader = new BufferedReader(new StringReader(bodyS));
+                        String timeStampS = null;
+                        try {
+                            timeStampS = reader.readLine();
+                        } catch (IOException e) {
+                            LOG.error("Error occurred while reading the bytes", e);
+                        }
+                        Long timeStamp = Long.parseLong(timeStampS);
+                        calculateAverage(currentTime - timeStamp);
+                        LOG.info("latency: " + averageLatency + " initial time: " + timeStamp + " current: " + currentTime);
                     } catch (JMSException e) {
                         LOG.error("Error", e);
                     }
@@ -136,7 +147,9 @@ public class JMSPerfSensor extends AbstractPerfSensor {
             if (context instanceof Session && input instanceof SensorTextMessage) {
                 try {
                     TextMessage message = ((Session) context).createTextMessage();
-                    message.setText(((SensorTextMessage) input).getText());
+                    long currentTime = System.currentTimeMillis();
+                    String send = currentTime + "\r\n" + ((SensorTextMessage) input).getText();
+                    message.setText(send);
                     return message;
                 } catch (JMSException e) {
                     LOG.error("Failed to convert SensorTextMessage to JMS message", e);

@@ -7,6 +7,7 @@ import cgl.iotcloud.core.client.SensorClient;
 import cgl.iotcloud.core.sensorsite.SensorDeployDescriptor;
 import org.apache.commons.cli.*;
 import org.apache.thrift.transport.TTransportException;
+import org.omg.CORBA._PolicyStub;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -108,6 +109,21 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
             interval = (Integer) intervalProp;
         }
         return interval;
+    }
+
+    protected double averageLatency = 0;
+
+    long count = 0;
+
+    public void calculateAverage(long val) {
+        count++;
+        if (val < 0) {
+            averageLatency = 0;
+            count = 0;
+        } else {
+            double delta = val - averageLatency;
+            averageLatency = averageLatency + delta / count;
+        }
     }
 
 }

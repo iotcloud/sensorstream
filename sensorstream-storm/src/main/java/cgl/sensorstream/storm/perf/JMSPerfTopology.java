@@ -48,7 +48,8 @@ public class JMSPerfTopology extends AbstractPerfTopology {
                 Long timeStamp = envelope.getMessage().getJMSTimestamp();
                 long currentTime = System.currentTimeMillis();
 
-                System.out.println("latency: " + (currentTime - timeStamp) + " initial time: " + timeStamp + " current: " + currentTime);
+                calculateAverage(currentTime - timeStamp);
+                System.out.println("latency: " + (currentTime - timeStamp) + " average: " + averageLatency);
                 List<Object> tuples = new ArrayList<Object>();
                 tuples.add(envelope);
                 return tuples;
@@ -56,6 +57,21 @@ public class JMSPerfTopology extends AbstractPerfTopology {
                 e.printStackTrace();
             }
             return null;
+        }
+
+        protected double averageLatency = 0;
+
+        long count = 0;
+
+        public void calculateAverage(long val) {
+            count++;
+            if (val < 0) {
+                averageLatency = 0;
+                count = 0;
+            } else {
+                double delta = val - averageLatency;
+                averageLatency = averageLatency + delta / count;
+            }
         }
 
         @Override
