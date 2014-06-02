@@ -20,6 +20,7 @@ public abstract class AbstractPerfTopology {
         options.addOption("qs", true, "Send Queue name");
         options.addOption("name", false, "Topology name");
         options.addOption("nw", false, "No of workers");
+        options.addOption("local", false, "Weather local storm is used");
 
         CommandLineParser commandLineParser = new BasicParser();
         try {
@@ -31,6 +32,8 @@ public abstract class AbstractPerfTopology {
             String sQueue = cmd.getOptionValue("qs");
             String tpName = cmd.getOptionValue("name");
             String noWorkers = cmd.getOptionValue("nw");
+
+            boolean local = cmd.hasOption("local");
 
             String[] results = ips.split(",");
             List<String> ipList = new ArrayList<String>();
@@ -45,6 +48,9 @@ public abstract class AbstractPerfTopology {
             if (noWorkers != null) {
                 tpConfiguration.setNoWorkers(Integer.parseInt(noWorkers));
             }
+
+            tpConfiguration.setLocal(local);
+
             return tpConfiguration;
         } catch (ParseException e) {
             HelpFormatter formatter = new HelpFormatter();
@@ -66,7 +72,7 @@ public abstract class AbstractPerfTopology {
     public static void submit(String []args, String topologyName,
                               TopologyBuilder builder, TopologyConfiguration configuration) throws Exception {
         Config conf = new Config();
-        if (!isLocal(args)) {
+        if (!configuration.isLocal()) {
             conf.setNumWorkers(configuration.getNoWorkers());
             StormSubmitter.submitTopology(topologyName, conf, builder.createTopology());
         } else {

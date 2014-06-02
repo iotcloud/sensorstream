@@ -16,11 +16,21 @@ public class TopologyConfiguration implements Serializable {
 
     private String sendBaseQueueName;
 
+    private boolean local;
+
     public TopologyConfiguration(List<String> ip, int noQueues, String baseQueueName, String sendBaseQueueName) {
         this.ip = ip;
         this.noQueues = noQueues;
         this.recevBaseQueueName = baseQueueName;
         this.sendBaseQueueName = sendBaseQueueName;
+    }
+
+    public boolean isLocal() {
+        return local;
+    }
+
+    public void setLocal(boolean local) {
+        this.local = local;
     }
 
     public int getNoWorkers() {

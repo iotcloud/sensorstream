@@ -16,6 +16,8 @@
       <root url="file://$PROJECT_DIR$/../iotcloud2/transports/kestrel/src/main/java" />
       <root url="file://$PROJECT_DIR$/../iotcloud2/transports/rabbitmq/src/main/java" />
       <root url="file://$PROJECT_DIR$/../iotcloud2/transports/rabbitmq/src/main/java" />
+      <root url="file://$PROJECT_DIR$/../storm-broker-connectors/storm-rabbitmq/src/main/java" />
+      <root url="file://$PROJECT_DIR$/../storm-broker-connectors/storm-rabbitmq/src/test/java" />
     </SOURCES>
   </library>
 </component>

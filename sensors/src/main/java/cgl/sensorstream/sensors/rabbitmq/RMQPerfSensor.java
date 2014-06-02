@@ -7,12 +7,14 @@ import cgl.iotcloud.core.transport.Direction;
 import cgl.iotcloud.core.transport.IdentityConverter;
 import cgl.iotcloud.core.transport.MessageConverter;
 import cgl.iotcloud.transport.rabbitmq.RabbitMQMessage;
+import cgl.iotcloud.transport.rabbitmq.RabbitMQSender;
 import cgl.sensorstream.sensors.AbstractPerfSensor;
 import com.rabbitmq.client.AMQP;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.jms.TextMessage;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -58,7 +60,7 @@ public class RMQPerfSensor extends AbstractPerfSensor {
             @Override
             public boolean loop(BlockingQueue queue) {
                 try {
-                    queue.put(new FileContentMessage(content.getBytes()));
+                    queue.put(new FileContentMessage(content));
                 } catch (InterruptedException e) {
                     LOG.error("Error", e);
                 }
@@ -70,11 +72,19 @@ public class RMQPerfSensor extends AbstractPerfSensor {
             @Override
             public void onMessage(Object message) {
                 if (message instanceof RabbitMQMessage) {
-                    Map<String, Object> headers = ((RabbitMQMessage) message).getBasicProperties().getHeaders();
-                    Long timeStamp = (Long) headers.get("time");
+                    byte []body= ((RabbitMQMessage) message).getBody();
+                    String bodyS = new String(body);
+                    BufferedReader reader = new BufferedReader(new StringReader(bodyS));
+                    String timeStampS = null;
+                    try {
+                        timeStampS = reader.readLine();
+                    } catch (IOException e) {
+                        LOG.error("Error occurred while reading the bytes", e);
+                    }
+                    Long timeStamp = Long.parseLong(timeStampS);
                     long currentTime = System.currentTimeMillis();
-
-                    System.out.println("latency: " + (currentTime - timeStamp) + " initial time: " + timeStamp + " current: " + currentTime);
+                    calculateAverage(currentTime - timeStamp);
+                    LOG.info("latency: " + averageLatency + " initial time: " + timeStamp + " current: " + currentTime);
                 } else {
                     System.out.println("Unexpected message");
                 }
@@ -123,13 +133,13 @@ public class RMQPerfSensor extends AbstractPerfSensor {
     }
 
     private class FileContentMessage {
-        private byte []content;
+        private String content;
 
-        private FileContentMessage(byte[] content) {
+        private FileContentMessage(String content) {
             this.content = content;
         }
 
-        public byte[] getContent() {
+        public String getContent() {
             return content;
         }
     }
@@ -138,10 +148,9 @@ public class RMQPerfSensor extends AbstractPerfSensor {
         @Override
         public Object convert(Object input, Object context) {
             if (input instanceof FileContentMessage) {
-                Map<String, Object> headers = new HashMap<String, Object>();
-                headers.put("time", System.currentTimeMillis());
-                AMQP.BasicProperties basicProperties = new AMQP.BasicProperties.Builder().headers(headers).build();
-                RabbitMQMessage message = new RabbitMQMessage(basicProperties, ((FileContentMessage) input).getContent());
+                long currentTime = System.currentTimeMillis();
+                String send = currentTime + "\r\n" + ((FileContentMessage) input).getContent();
+                RabbitMQMessage message = new RabbitMQMessage(null, send.getBytes());
                 return message;
             }
             return null;

@@ -4,10 +4,16 @@ import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
+import com.rabbitmq.client.AMQP;
 import com.ss.rabbitmq.*;
 import com.ss.rabbitmq.bolt.RabbitMQBolt;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.Serializable;
+import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,29 +37,58 @@ public class RRPerfTopology extends AbstractPerfTopology {
             builder.setBolt("rabbit_bolt_" + i, bolt, 2).shuffleGrouping("rabbit_spout_" + i);
             i++;
         }
-        submit(args, "kestrelTest", builder, configuration);
+        submit(args, "rabbitTest", builder, configuration);
     }
 
     private static class TimeStampMessageBuilder implements MessageBuilder {
         @Override
         public List<Object> deSerialize(RabbitMQMessage message) {
-            Map<String, Object> headers = message.getProperties().getHeaders();
-            Long timeStamp = (Long) headers.get("time");
+            byte []body = message.getBody();
+            String bodyS = new String(body);
+            BufferedReader reader = new BufferedReader(new StringReader(bodyS));
+            String timeStampS = null;
+            try {
+                timeStampS = reader.readLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            Long timeStamp = Long.parseLong(timeStampS);
             long currentTime = System.currentTimeMillis();
-
             System.out.println("latency: " + (currentTime - timeStamp) + " initial time: " + timeStamp + " current: " + currentTime);
             List<Object> tuples = new ArrayList<Object>();
-            tuples.add(message);
+
+            SendMessage sendMessage = new SendMessage(message.getQueue(), message.getBody());
+            tuples.add(sendMessage);
             return tuples;
         }
 
         @Override
         public RabbitMQMessage serialize(Tuple tuple) {
             Object message = tuple.getValue(0);
-            if (message instanceof  RabbitMQMessage){
-                return (RabbitMQMessage) message;
+            if (message instanceof  SendMessage){
+                RabbitMQMessage rrMessage = new RabbitMQMessage(((SendMessage) message).getQueue(), null, null, null, ((SendMessage) message).getContent());
+                return rrMessage;
             }
             return null;
+        }
+    }
+
+    private static class SendMessage implements Serializable {
+        private String queue;
+
+        private byte[] content;
+
+        private SendMessage(String queue, byte[] content) {
+            this.queue = queue;
+            this.content = content;
+        }
+
+        public String getQueue() {
+            return queue;
+        }
+
+        public byte[] getContent() {
+            return content;
         }
     }
 
@@ -191,7 +226,7 @@ public class RRPerfTopology extends AbstractPerfTopology {
             return new RabbitMQDestinationSelector() {
                 @Override
                 public String select(Tuple message) {
-                    RabbitMQMessage mqttMessage = (RabbitMQMessage) message.getValue(0);
+                    SendMessage mqttMessage = (SendMessage) message.getValue(0);
                     String queue = mqttMessage.getQueue();
                     if (queue != null) {
                         String queueNumber = queue.substring(queue.indexOf("_") + 1);

@@ -149,13 +149,8 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
 
     public void calculateAverage(long val) {
         count++;
-        if (val < 0) {
-            averageLatency = 0;
-            count = 0;
-        } else {
-            double delta = val - averageLatency;
-            averageLatency = averageLatency + delta / count;
-        }
+        double delta = val - averageLatency;
+        averageLatency = averageLatency + delta / count;
     }
 
 }
