@@ -11,12 +11,23 @@ public class SensorConfiguration {
 
     private String fileName;
 
+    private boolean sameQueue;
+
     public SensorConfiguration(int noSensors, String baseSendQueueName, String baseRecvQueueName, int sendInterval, String fileName) {
         this.noSensors = noSensors;
         this.baseSendQueueName = baseSendQueueName;
         this.baseRecvQueueName = baseRecvQueueName;
         this.sendInterval = sendInterval;
         this.fileName = fileName;
+    }
+
+    public boolean isSameQueue() {
+        return sameQueue;
+    }
+
+
+    public void setSameQueue(boolean sameQueue) {
+        this.sameQueue = sameQueue;
     }
 
     public int getNoSensors() {

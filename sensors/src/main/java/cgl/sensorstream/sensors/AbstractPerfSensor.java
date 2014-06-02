@@ -38,12 +38,22 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
         client = new SensorClient(conf);
 
         SensorConfiguration configuration = parseArgs(args);
-        for (int i = 0; i < configuration.getNoSensors() / sites.size(); i++) {
-            SensorDeployDescriptor deployDescriptor = new SensorDeployDescriptor("sensors-1.0-SNAPSHOT-jar-with-dependencies.jar", className);
-            deployDescriptor.addDeploySites(sites);
-            addConfigurationsToDescriptor(configuration, deployDescriptor, i);
+        if (!configuration.isSameQueue()) {
+            for (int i = 0; i < configuration.getNoSensors() / sites.size(); i++) {
+                SensorDeployDescriptor deployDescriptor = new SensorDeployDescriptor("sensors-1.0-SNAPSHOT-jar-with-dependencies.jar", className);
+                deployDescriptor.addDeploySites(sites);
+                addConfigurationsToDescriptor(configuration, deployDescriptor, i);
 
-            client.deploySensor(deployDescriptor);
+                client.deploySensor(deployDescriptor);
+            }
+        } else {
+            for (int i = 0; i < configuration.getNoSensors() / sites.size(); i++) {
+                SensorDeployDescriptor deployDescriptor = new SensorDeployDescriptor("sensors-1.0-SNAPSHOT-jar-with-dependencies.jar", className);
+                deployDescriptor.addDeploySites(sites);
+                addConfigurationsToDescriptor(configuration, deployDescriptor, 0, i);
+
+                client.deploySensor(deployDescriptor);
+            }
         }
     }
 
@@ -54,6 +64,7 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
         options.addOption("n", true, "Number of sensors");
         options.addOption("qr", true, "Receive Queue name");
         options.addOption("qs", true, "Send Queue name");
+        options.addOption("same", false, "All the queues use same queue");
 
         CommandLineParser commandLineParser = new BasicParser();
         try {
@@ -64,14 +75,35 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
             int noSensors = Integer.parseInt(cmd.getOptionValue("n"));
             String recvQueueName = cmd.getOptionValue("qr");
             String sendQueueName = cmd.getOptionValue("qs");
+            boolean same = cmd.hasOption("same");
 
-            return new SensorConfiguration(noSensors, sendQueueName, recvQueueName, Integer.parseInt(timeString), fileName);
+            SensorConfiguration configuration = new SensorConfiguration(noSensors, sendQueueName, recvQueueName, Integer.parseInt(timeString), fileName);
+            configuration.setSameQueue(same);
+            return configuration;
         } catch (ParseException e) {
             HelpFormatter formatter = new HelpFormatter();
             formatter.printHelp("sensor", options );
         }
         return null;
     }
+
+    public static void addConfigurationsToDescriptor(SensorConfiguration configuration, SensorDeployDescriptor deployDescriptor, int sensorNo, int queueNo) {
+        deployDescriptor.addProperty(SEND_INTERVAL, Integer.toString(configuration.getSendInterval()));
+        deployDescriptor.addProperty(FILE_NAME, configuration.getFileName());
+        deployDescriptor.addProperty(SEND_QUEUE_NAME_PROP, configuration.getBaseSendQueueName() + "_" + sensorNo);
+        deployDescriptor.addProperty(RECEIVE_QUEUE_PROP, configuration.getBaseRecvQueueName() + "_" + sensorNo);
+
+        deployDescriptor.addProperty(SEND_EXCHANGE_NAME_PROP, "perfSensor");
+        deployDescriptor.addProperty(SEND_ROUTING_KEY_PROP, configuration.getBaseSendQueueName() + "_" + queueNo);
+
+        deployDescriptor.addProperty(RECV_EXCHANGE_NAME_PROP, "perfSensor");
+        deployDescriptor.addProperty(RECV_ROUTING_KEY_PROP, configuration.getBaseRecvQueueName() + "_" + queueNo);
+
+        deployDescriptor.addProperty(SERVER, "s1");
+
+        deployDescriptor.addProperty(SENSOR_NAME, "perf_" + sensorNo);
+    }
+
 
     public static void addConfigurationsToDescriptor(SensorConfiguration configuration, SensorDeployDescriptor deployDescriptor, int sensorNo) {
         deployDescriptor.addProperty(SEND_INTERVAL, Integer.toString(configuration.getSendInterval()));

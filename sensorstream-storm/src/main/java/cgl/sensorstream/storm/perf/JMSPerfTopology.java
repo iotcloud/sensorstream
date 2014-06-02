@@ -9,6 +9,7 @@ import com.ss.jms.bolt.JMSBolt;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
 import javax.jms.*;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +34,25 @@ public class JMSPerfTopology extends AbstractPerfTopology {
         submit(args, "jmsTest", builder, configuration);
     }
 
+    private static class SendMessage implements Serializable {
+        private String queue;
+
+        private String content;
+
+        public SendMessage(String queue, String content) {
+            this.queue = queue;
+            this.content = content;
+        }
+
+        public String getQueue() {
+            return queue;
+        }
+
+        public String getContent() {
+            return content;
+        }
+    }
+
     private static class TimeStampMessageBuilder implements MessageBuilder {
         @Override
         public List<Object> deSerialize(JMSMessage envelope) {
@@ -43,7 +63,12 @@ public class JMSPerfTopology extends AbstractPerfTopology {
                 calculateAverage(currentTime - timeStamp);
                 System.out.println("latency: " + (currentTime - timeStamp) + " average: " + averageLatency);
                 List<Object> tuples = new ArrayList<Object>();
-                tuples.add(envelope);
+
+                if (envelope.getMessage() instanceof TextMessage) {
+                    SendMessage message = new SendMessage(envelope.getQueue(), ((TextMessage) envelope.getMessage()).getText());
+                    tuples.add(message);
+                }
+
                 return tuples;
             } catch (JMSException e) {
                 e.printStackTrace();
@@ -69,12 +94,10 @@ public class JMSPerfTopology extends AbstractPerfTopology {
         @Override
         public JMSMessage serialize(Tuple tuple, Object o) {
             if (o instanceof Session) {
-                JMSMessage jmsMessage = (JMSMessage) tuple.getValue(0);
+                SendMessage jmsMessage = (SendMessage) tuple.getValue(0);
                 try {
                     TextMessage message = ((Session) o).createTextMessage();
-                    if (jmsMessage.getMessage() instanceof TextMessage) {
-                        message.setText(((TextMessage) jmsMessage.getMessage()).getText());
-                    }
+                    message.setText(jmsMessage.getContent());
                     return new JMSMessage(message, jmsMessage.getQueue());
                 } catch (JMSException e) {
                     e.printStackTrace();
@@ -215,7 +238,7 @@ public class JMSPerfTopology extends AbstractPerfTopology {
 
         @Override
         public String select(Tuple tuple) {
-            JMSMessage mqttMessage = (JMSMessage) tuple.getValue(0);
+            SendMessage mqttMessage = (SendMessage) tuple.getValue(0);
             String queue = mqttMessage.getQueue();
             if (queue != null) {
                 String queueNumber = queue.substring(queue.indexOf("_") + 1);

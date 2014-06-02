@@ -68,7 +68,7 @@ public abstract class AbstractPerfTopology {
         Config conf = new Config();
         if (!isLocal(args)) {
             conf.setNumWorkers(configuration.getNoWorkers());
-            StormSubmitter.submitTopology(args[0], conf, builder.createTopology());
+            StormSubmitter.submitTopology(topologyName, conf, builder.createTopology());
         } else {
             LocalCluster cluster = new LocalCluster();
             cluster.submitTopology(topologyName, conf, builder.createTopology());
