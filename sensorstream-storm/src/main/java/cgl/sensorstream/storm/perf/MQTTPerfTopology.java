@@ -1,8 +1,5 @@
 package cgl.sensorstream.storm.perf;
 
-import backtype.storm.Config;
-import backtype.storm.LocalCluster;
-import backtype.storm.StormSubmitter;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
@@ -37,7 +34,7 @@ public class MQTTPerfTopology extends AbstractPerfTopology {
         @Override
         public List<Object> deSerialize(MQTTMessage envelope) {
             try {
-                byte []body = envelope.getBody().toByteArray();
+                byte []body = envelope.getBody();
                 String bodyS = new String(body);
                 BufferedReader reader = new BufferedReader(new StringReader(bodyS));
                 String timeStampS = reader.readLine();
@@ -47,7 +44,8 @@ public class MQTTPerfTopology extends AbstractPerfTopology {
 
                 System.out.println("latency: " + (currentTime - timeStamp) + " initial time: " + timeStamp + " current: " + currentTime);
                 List<Object> tuples = new ArrayList<Object>();
-                tuples.add(envelope);
+                BoltMessage newMessage = new BoltMessage(envelope.getQueue(), body);
+                tuples.add(newMessage);
                 return tuples;
             } catch (IOException e) {
                 e.printStackTrace();
@@ -58,8 +56,9 @@ public class MQTTPerfTopology extends AbstractPerfTopology {
         @Override
         public MQTTMessage serialize(Tuple tuple) {
             Object message = tuple.getValue(0);
-            if (message instanceof  MQTTMessage){
-                return (MQTTMessage) message;
+            if (message instanceof  BoltMessage) {
+                return new MQTTMessage(null, (byte [])((BoltMessage) message).getContent(),
+                        ((BoltMessage) message).getQueue(), null);
             }
             return null;
         }
@@ -157,7 +156,7 @@ public class MQTTPerfTopology extends AbstractPerfTopology {
             return new DestinationSelector() {
                 @Override
                 public String select(Tuple message) {
-                    MQTTMessage mqttMessage = (MQTTMessage) message.getValue(0);
+                    BoltMessage mqttMessage = (BoltMessage) message.getValue(0);
                     String queue = mqttMessage.getQueue();
                     if (queue != null) {
                         String queueNumber = queue.substring(queue.indexOf("_") + 1);
