@@ -32,20 +32,21 @@ public class KestrelPerfTopology extends AbstractPerfTopology {
         public List<Object> deSerialize(KestrelMessage envelope) {
             try {
                 byte []body = envelope.getData();
-                String bodyS = new String(body, "UTF-8");
+                String bodyS = new String(body);
                 List<Object> tuples = new ArrayList<Object>();
+                long currentTime = System.currentTimeMillis();
                 if (!bodyS.trim().equals("")) {
                     BufferedReader reader = new BufferedReader(new StringReader(bodyS));
                     String timeStampS = reader.readLine();
                     Long timeStamp = Long.parseLong(timeStampS);
 
-                    long currentTime = System.currentTimeMillis();
+
 
                     System.out.println("latency: " + (currentTime - timeStamp) + " initial time: " + timeStamp + " current: " + currentTime);
                     tuples.add(envelope);
                     return tuples;
                 } else {
-                    tuples.add(new KestrelMessage("hello".getBytes(), envelope.getId(), envelope.getQueue()));
+                    tuples.add(new KestrelMessage((currentTime + "\r\nhello").getBytes(), envelope.getId(), envelope.getQueue()));
                     return tuples;
                 }
             } catch (IOException e) {
