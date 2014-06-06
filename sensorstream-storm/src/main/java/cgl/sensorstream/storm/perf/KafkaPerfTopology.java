@@ -8,6 +8,7 @@ import com.ss.jms.*;
 import com.ss.jms.bolt.JMSBolt;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import storm.kafka.*;
+import storm.kafka.bolt.KafkaBolt;
 import storm.kafka.trident.GlobalPartitionInformation;
 
 import javax.jms.*;
@@ -36,8 +37,8 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
             KafkaSpout spout = new KafkaSpout(spoutConfig);
             builder.setSpout("kafka_spout_" + i, spout, 1);
 
-            JMSBolt bolt = new JMSBolt(new BoltConfigurator(configuration, ip), null);
-            builder.setBolt("kafka_bolt_" + i, bolt, 1).shuffleGrouping("jms_spout_" + i);
+            KafkaBolt bolt = new KafkaBolt();
+            builder.setBolt("kafka_bolt_" + i, bolt, 1).shuffleGrouping("kafka_bolt_" + i);
             i++;
         }
 
