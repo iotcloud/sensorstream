@@ -32,8 +32,6 @@ public class RMQPerfSensor extends AbstractPerfSensor {
         return new RabbitConfigurator();
     }
 
-
-
     @Override
     public void open(SensorContext context) {
         this.context = context;
@@ -97,7 +95,7 @@ public class RMQPerfSensor extends AbstractPerfSensor {
     private class RabbitConfigurator extends AbstractConfigurator {
         @Override
         public SensorContext configure(SiteContext siteContext, Map conf) {
-            SensorContext context = new SensorContext(new SensorId("rabbitChat", "general"));
+
             String exchange = (String) conf.get(SEND_EXCHANGE_NAME_PROP);
             String sendQueue = (String) conf.get(SEND_QUEUE_NAME_PROP);
 
@@ -107,6 +105,9 @@ public class RMQPerfSensor extends AbstractPerfSensor {
             String routingKey = (String) conf.get(SEND_ROUTING_KEY_PROP);
             String recvRoutingKey = (String) conf.get(RECV_ROUTING_KEY_PROP);
             String fileName = (String) conf.get(FILE_NAME);
+            String sensorName = (String) conf.get(SENSOR_NAME);
+
+            SensorContext context = new SensorContext(new SensorId(sensorName, "general"));
 
             String sendInterval = (String) conf.get(SEND_INTERVAL);
             int interval = Integer.parseInt(sendInterval);
