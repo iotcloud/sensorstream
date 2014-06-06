@@ -8,7 +8,6 @@ import cgl.iotcloud.core.transport.Direction;
 import cgl.iotcloud.core.transport.IdentityConverter;
 import cgl.iotcloud.core.transport.MessageConverter;
 import cgl.iotcloud.transport.kafka.KafkaMessage;
-import cgl.iotcloud.transport.kestrel.KestrelMessage;
 import cgl.sensorstream.sensors.AbstractPerfSensor;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
@@ -67,7 +66,7 @@ public class KafkaPerfSensor extends AbstractPerfSensor {
             public void onMessage(Object message) {
                 if (message instanceof KafkaMessage) {
                     KafkaMessage envelope = (KafkaMessage) message;
-                    byte []body = null;
+                    byte []body = envelope.getData();
                     String bodyS = new String(body);
                     BufferedReader reader = new BufferedReader(new StringReader(bodyS));
                     String timeStampS = null;
@@ -129,7 +128,7 @@ public class KafkaPerfSensor extends AbstractPerfSensor {
             context.addProperty(FILE_NAME, fileName);
 
             Map sendProps = new HashMap();
-            sendProps.put("queueName", sendQueue);
+            sendProps.put("topic", sendQueue);
             sendProps.put("server", server);
             Channel sendChannel = createChannel("sender", sendProps, Direction.OUT, 1024, new KestrelOutMessageConverter());
 
