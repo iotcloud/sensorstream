@@ -133,8 +133,9 @@ public class KafkaPerfSensor extends AbstractPerfSensor {
             Channel sendChannel = createChannel("sender", sendProps, Direction.OUT, 1024, new KestrelOutMessageConverter());
 
             Map receiveProps = new HashMap();
-            receiveProps.put("queueName", recvQueue);
+            receiveProps.put("topic", recvQueue);
             receiveProps.put("server", server);
+            receiveProps.put("partition", 0);
             Channel receiveChannel = createChannel("receiver", receiveProps, Direction.IN, 1024, new IdentityConverter());
 
             context.addChannel("kafka", sendChannel);
