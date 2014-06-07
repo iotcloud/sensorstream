@@ -83,4 +83,18 @@ public abstract class AbstractPerfTopology {
             cluster.shutdown();
         }
     }
+
+    public static void submit(String []args, String topologyName,
+                              TopologyBuilder builder, TopologyConfiguration configuration, Config conf) throws Exception {
+        if (!configuration.isLocal()) {
+            conf.setNumWorkers(configuration.getNoWorkers());
+            StormSubmitter.submitTopology(topologyName, conf, builder.createTopology());
+        } else {
+            LocalCluster cluster = new LocalCluster();
+            cluster.submitTopology(topologyName, conf, builder.createTopology());
+            Thread.sleep(6000000);
+            cluster.killTopology(topologyName);
+            cluster.shutdown();
+        }
+    }
 }

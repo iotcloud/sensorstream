@@ -1,5 +1,6 @@
 package cgl.sensorstream.storm.perf;
 
+import backtype.storm.Config;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
@@ -22,25 +23,27 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
 
+        Config config = new Config();
+
         TopologyConfiguration configuration = parseArgs(args);
-
-
         GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation();
-        globalPartitionInformation.addPartition(0, Broker.fromString("aaaa"));
-        globalPartitionInformation.addPartition(1, Broker.fromString("aaaa"));
+        int i = 0;
+        for (String ip : configuration.getIp()) {
+            globalPartitionInformation.addPartition(0, Broker.fromString(ip));
+            globalPartitionInformation.addPartition(1, Broker.fromString(ip));
+            i++;
+        }
 
         BrokerHosts brokerHosts = new StaticHosts(globalPartitionInformation);
         SpoutConfig spoutConfig = new SpoutConfig(brokerHosts, configuration.getRecevBaseQueueName(), "", "kafka_spout");
+        KafkaSpout spout = new KafkaSpout(spoutConfig);
+        builder.setSpout("kafka_spout" + i, spout, 1);
 
-        int i = 0;
-        for (String ip : configuration.getIp()) {
-            KafkaSpout spout = new KafkaSpout(spoutConfig);
-            builder.setSpout("kafka_spout_" + i, spout, 1);
-
-            KafkaBolt bolt = new KafkaBolt();
-            builder.setBolt("kafka_bolt_" + i, bolt, 1).shuffleGrouping("kafka_bolt_" + i);
-            i++;
-        }
+        KafkaBolt bolt = new KafkaBolt();
+        config.put(KafkaBolt.TOPIC, configuration.getSendBaseQueueName());
+        config.put(KafkaBolt.BOLT_KEY, "key");
+        config.put(KafkaBolt.BOLT_MESSAGE, "message");
+        builder.setBolt("kafka_bolt", bolt, 1).shuffleGrouping("kafka_bolt_" + i);
 
         submit(args, "jmsTest", builder, configuration);
     }
@@ -113,86 +116,6 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
                 } catch (JMSException e) {
                     e.printStackTrace();
                 }
-            }
-            return null;
-        }
-    }
-
-    private static class SpoutConfigurator implements JMSConfigurator {
-        TopologyConfiguration configuration;
-
-        ActiveMQConnectionFactory connectionFactory;
-
-        Map<String, Destination> destinations;
-
-        private SpoutConfigurator(TopologyConfiguration configuration, String ip) {
-            this.configuration = configuration;
-
-            destinations = new HashMap<String, Destination>();
-            this.connectionFactory = new ActiveMQConnectionFactory(ip);
-            connectionFactory.setOptimizeAcknowledge(true);
-            connectionFactory.setAlwaysSessionAsync(false);
-            Connection connection;
-            try {
-                connection = connectionFactory.createConnection();
-                connection.start();
-
-                Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                for (int i = 0; i < configuration.getNoQueues(); i++) {
-                    this.destinations.put(configuration.getRecevBaseQueueName() + "_" + i,
-                            session.createQueue(configuration.getRecevBaseQueueName() + "_" + i));
-                }
-
-                connection.close();
-            } catch (JMSException e) {
-                e.printStackTrace();
-            }
-        }
-
-        public int ackMode() {
-            return Session.AUTO_ACKNOWLEDGE;
-        }
-
-        public ConnectionFactory connectionFactory() throws Exception {
-            return connectionFactory;
-        }
-
-        public Map<String, Destination> destinations() throws Exception {
-            return destinations;
-        }
-
-        public MessageBuilder getMessageBuilder() {
-            return new TimeStampMessageBuilder();
-        }
-
-        public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-            outputFieldsDeclarer.declare(new Fields("jms_spout_out"));
-        }
-
-        public int queueSize() {
-            return 1024;
-        }
-
-        @Override
-        public JMSDestinationSelector getDestinationSelector() {
-            return null;
-        }
-    }
-
-    private static class PerfDestinationSelector implements JMSDestinationSelector {
-        private TopologyConfiguration configuration;
-
-        private PerfDestinationSelector(TopologyConfiguration configuration) {
-            this.configuration = configuration;
-        }
-
-        @Override
-        public String select(Tuple tuple) {
-            SendMessage mqttMessage = (SendMessage) tuple.getValue(0);
-            String queue = mqttMessage.getQueue();
-            if (queue != null) {
-                String queueNumber = queue.substring(queue.indexOf("_") + 1);
-                return configuration.getSendBaseQueueName() + "_" + queueNumber;
             }
             return null;
         }
