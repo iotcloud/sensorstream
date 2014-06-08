@@ -1,7 +1,9 @@
 package cgl.sensorstream.storm.perf;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class TopologyConfiguration implements Serializable {
     private int noWorkers = 4;
@@ -17,6 +19,8 @@ public class TopologyConfiguration implements Serializable {
     private String sendBaseQueueName;
 
     private boolean local;
+
+    private Map<String, String> properties = new HashMap<String, String>();
 
     public TopologyConfiguration(List<String> ip, int noQueues, String baseQueueName, String sendBaseQueueName) {
         this.ip = ip;
@@ -63,5 +67,13 @@ public class TopologyConfiguration implements Serializable {
 
     public String getSendBaseQueueName() {
         return sendBaseQueueName;
+    }
+
+    public void addProperty(String key, String value) {
+        properties.put(key, value);
+    }
+
+    public Map<String, String> getProperties() {
+        return properties;
     }
 }

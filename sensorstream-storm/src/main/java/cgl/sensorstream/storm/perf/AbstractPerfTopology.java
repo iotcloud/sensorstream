@@ -3,16 +3,15 @@ package cgl.sensorstream.storm.perf;
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.StormSubmitter;
-import backtype.storm.generated.AlreadyAliveException;
-import backtype.storm.generated.InvalidTopologyException;
 import backtype.storm.topology.TopologyBuilder;
 import org.apache.commons.cli.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public abstract class AbstractPerfTopology {
-    public static TopologyConfiguration parseArgs(String []args) {
+    public static TopologyConfiguration parseArgs(String []args, Map<String, String> properties) {
         Options options = new Options();
         options.addOption("n", true, "No of queues");
         options.addOption("i", true, "IP");
@@ -21,6 +20,12 @@ public abstract class AbstractPerfTopology {
         options.addOption("name", false, "Topology name");
         options.addOption("nw", false, "No of workers");
         options.addOption("local", false, "Weather local storm is used");
+
+        if (properties != null) {
+            for (Map.Entry<String, String> e : properties.entrySet()) {
+                options.addOption(e.getKey(), true, e.getValue());
+            }
+        }
 
         CommandLineParser commandLineParser = new BasicParser();
         try {
@@ -32,6 +37,8 @@ public abstract class AbstractPerfTopology {
             String sQueue = cmd.getOptionValue("qs");
             String tpName = cmd.getOptionValue("name");
             String noWorkers = cmd.getOptionValue("nw");
+
+
 
             boolean local = cmd.hasOption("local");
 
@@ -51,6 +58,12 @@ public abstract class AbstractPerfTopology {
 
             tpConfiguration.setLocal(local);
 
+            if (properties != null) {
+                for (Map.Entry<String, String> e : properties.entrySet()) {
+                    tpConfiguration.addProperty(e.getKey(), cmd.getOptionValue(e.getKey()));
+                }
+            }
+
             return tpConfiguration;
         } catch (ParseException e) {
             HelpFormatter formatter = new HelpFormatter();
@@ -58,6 +71,10 @@ public abstract class AbstractPerfTopology {
         }
 
         return null;
+    }
+
+    public static TopologyConfiguration parseArgs(String []args) {
+        return parseArgs(args, null);
     }
 
     public static boolean isLocal(String []args) {
