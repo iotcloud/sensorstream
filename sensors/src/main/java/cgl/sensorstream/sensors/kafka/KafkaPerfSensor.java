@@ -100,17 +100,6 @@ public class KafkaPerfSensor extends AbstractPerfSensor {
         }
     }
 
-    @Override
-    public void close() {
-        if (context != null) {
-            for (List<Channel> cs : context.getChannels().values()) {
-                for (Channel c : cs) {
-                    c.close();
-                }
-            }
-        }
-    }
-
     private class KestrelConfigurator extends AbstractConfigurator {
         @Override
         public SensorContext configure(SiteContext siteContext, Map conf) {

@@ -7,7 +7,6 @@ import cgl.iotcloud.core.client.SensorClient;
 import cgl.iotcloud.core.sensorsite.SensorDeployDescriptor;
 import org.apache.commons.cli.*;
 import org.apache.thrift.transport.TTransportException;
-import org.omg.CORBA._PolicyStub;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -90,14 +89,14 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
     public static void addConfigurationsToDescriptor(SensorConfiguration configuration, SensorDeployDescriptor deployDescriptor, int sensorNo, int queueNo) {
         deployDescriptor.addProperty(SEND_INTERVAL, Integer.toString(configuration.getSendInterval()));
         deployDescriptor.addProperty(FILE_NAME, configuration.getFileName());
-        deployDescriptor.addProperty(SEND_QUEUE_NAME_PROP, configuration.getBaseSendQueueName() + "_" + sensorNo);
-        deployDescriptor.addProperty(RECEIVE_QUEUE_PROP, configuration.getBaseRecvQueueName() + "_" + sensorNo);
+        deployDescriptor.addProperty(SEND_QUEUE_NAME_PROP, configuration.getBaseSendQueueName());
+        deployDescriptor.addProperty(RECEIVE_QUEUE_PROP, configuration.getBaseRecvQueueName());
 
         deployDescriptor.addProperty(SEND_EXCHANGE_NAME_PROP, "perfSensor");
-        deployDescriptor.addProperty(SEND_ROUTING_KEY_PROP, configuration.getBaseSendQueueName() + "_" + queueNo);
+        deployDescriptor.addProperty(SEND_ROUTING_KEY_PROP, configuration.getBaseSendQueueName());
 
         deployDescriptor.addProperty(RECV_EXCHANGE_NAME_PROP, "perfSensor");
-        deployDescriptor.addProperty(RECV_ROUTING_KEY_PROP, configuration.getBaseRecvQueueName() + "_" + queueNo);
+        deployDescriptor.addProperty(RECV_ROUTING_KEY_PROP, configuration.getBaseRecvQueueName());
 
         deployDescriptor.addProperty(SERVER, "s1");
 

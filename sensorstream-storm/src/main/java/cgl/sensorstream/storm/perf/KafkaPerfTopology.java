@@ -4,6 +4,7 @@ import backtype.storm.Config;
 import backtype.storm.spout.MultiScheme;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
+import com.google.common.collect.ImmutableMap;
 import storm.kafka.*;
 import storm.kafka.bolt.KafkaBolt;
 import storm.kafka.trident.GlobalPartitionInformation;
@@ -11,7 +12,10 @@ import storm.kafka.trident.GlobalPartitionInformation;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static backtype.storm.utils.Utils.tuple;
 import static java.util.Arrays.asList;
@@ -23,7 +27,8 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
 
         Config config = new Config();
 
-        TopologyConfiguration configuration = parseArgs(args);
+        Map<String, String> options = ImmutableMap.of("zip", "Zookeeper hosts", "zport", "zookeeper port");
+        TopologyConfiguration configuration = parseArgs(args, options);
 
         GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation();
         int i = 0;
@@ -35,6 +40,10 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
 
         BrokerHosts brokerHosts = new StaticHosts(globalPartitionInformation);
         SpoutConfig spoutConfig = new SpoutConfig(brokerHosts, configuration.getRecevBaseQueueName(), "", "kafka_spout");
+
+        String zooIps = configuration.getProperties().get("zip");
+        spoutConfig.zkServers = getZooServers(zooIps);
+        spoutConfig.zkPort = Integer.parseInt(configuration.getProperties().get("zport"));
         spoutConfig.scheme = new TimeStampMessageBuilder();
 
         KafkaSpout spout = new KafkaSpout(spoutConfig);
@@ -45,6 +54,13 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
         builder.setBolt("kafka_bolt", bolt, 1).shuffleGrouping("kafka_bolt_" + i);
 
         submit(args, "jmsTest", builder, configuration, config);
+    }
+
+    private static List<String> getZooServers(String zooIps) {
+        String zooIpProps[] = zooIps.split(",");
+        List<String> list = new ArrayList<String>();
+        Collections.addAll(list, zooIpProps);
+        return list;
     }
 
     private static class TimeStampMessageBuilder implements MultiScheme {

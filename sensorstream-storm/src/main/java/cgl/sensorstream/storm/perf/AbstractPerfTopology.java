@@ -38,8 +38,6 @@ public abstract class AbstractPerfTopology {
             String tpName = cmd.getOptionValue("name");
             String noWorkers = cmd.getOptionValue("nw");
 
-
-
             boolean local = cmd.hasOption("local");
 
             String[] results = ips.split(",");
