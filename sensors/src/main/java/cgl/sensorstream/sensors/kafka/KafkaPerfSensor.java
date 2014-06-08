@@ -96,7 +96,9 @@ public class KafkaPerfSensor extends AbstractPerfSensor {
         public Object convert(Object o, Object o1) {
             long currentTime = System.currentTimeMillis();
             String send = currentTime + "\r\n" + o.toString();
-            return send.getBytes();
+            KafkaMessage message = new KafkaMessage(null, 0, send.getBytes());
+            message.setKey("key");
+            return message;
         }
     }
 
