@@ -29,11 +29,11 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
 
         GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation();
         int i = 0;
-        for (String ip : configuration.getIp()) {
-            globalPartitionInformation.addPartition(0, Broker.fromString(ip));
-            globalPartitionInformation.addPartition(1, Broker.fromString(ip));
+        //for (String ip : configuration.getIp()) {
+            globalPartitionInformation.addPartition(0, Broker.fromString(configuration.getIp().get(1)));
+            globalPartitionInformation.addPartition(1, Broker.fromString(configuration.getIp().get(0)));
             i++;
-        }
+        //}
 
         BrokerHosts brokerHosts = new StaticHosts(globalPartitionInformation);
         SpoutConfig spoutConfig = new SpoutConfig(brokerHosts, configuration.getRecevBaseQueueName(), "", "kafka_spout");
@@ -49,7 +49,7 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
         KafkaBolt bolt = new KafkaBolt();
         config.put(KafkaBolt.TOPIC, configuration.getSendBaseQueueName());
         Map<String, Object> props = new HashMap<String, Object>();
-        props.put("metadata.broker.list", configuration.getIp());
+        props.put("metadata.broker.list", brokerList(configuration.getIp()));
         config.put(KafkaBolt.KAFKA_BROKER_PROPERTIES, props);
         builder.setBolt("kafka_bolt", bolt, 1).shuffleGrouping("kafka_spout");
 
@@ -84,7 +84,10 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
                 Long timeStamp = Long.parseLong(timeStampS);
                 calculateAverage(currentTime - timeStamp);
                 System.out.println("latency: " + averageLatency + " initial time: " + timeStamp + " current: " + currentTime);
-                return asList(tuple(body, "key1"));
+                List<Object> tuples = new ArrayList<Object>();
+                tuples.add(body);
+                tuples.add("key1".getBytes());
+                return Arrays.asList(tuples);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -95,5 +98,13 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
         public Fields getOutputFields() {
             return new Fields("message", "key");
         }
+    }
+
+    private static String brokerList(List<String> brokers) {
+        String ret = "";
+        for (String s : brokers) {
+            ret = ret + s + ",";
+        }
+        return ret;
     }
 }
