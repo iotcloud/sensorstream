@@ -12,10 +12,7 @@ import storm.kafka.trident.GlobalPartitionInformation;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static backtype.storm.utils.Utils.tuple;
 import static java.util.Arrays.asList;
@@ -47,11 +44,14 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
         spoutConfig.scheme = new TimeStampMessageBuilder();
 
         KafkaSpout spout = new KafkaSpout(spoutConfig);
-        builder.setSpout("kafka_spout" + i, spout, 1);
+        builder.setSpout("kafka_spout", spout, 1);
 
         KafkaBolt bolt = new KafkaBolt();
         config.put(KafkaBolt.TOPIC, configuration.getSendBaseQueueName());
-        builder.setBolt("kafka_bolt", bolt, 1).shuffleGrouping("kafka_bolt_" + i);
+        Map<String, Object> props = new HashMap<String, Object>();
+        props.put("metadata.broker.list", configuration.getIp());
+        config.put(KafkaBolt.KAFKA_BROKER_PROPERTIES, props);
+        builder.setBolt("kafka_bolt", bolt, 1).shuffleGrouping("kafka_spout");
 
         submit(args, "jmsTest", builder, configuration, config);
     }
