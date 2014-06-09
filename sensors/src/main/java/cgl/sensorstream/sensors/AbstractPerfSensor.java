@@ -49,7 +49,7 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
             for (int i = 0; i < configuration.getNoSensors() / sites.size(); i++) {
                 SensorDeployDescriptor deployDescriptor = new SensorDeployDescriptor("sensors-1.0-SNAPSHOT-jar-with-dependencies.jar", className);
                 deployDescriptor.addDeploySites(sites);
-                addConfigurationsToDescriptor(configuration, deployDescriptor, 0, i);
+                addConfigurationsToDescriptor(configuration, deployDescriptor, i, 0);
 
                 client.deploySensor(deployDescriptor);
             }

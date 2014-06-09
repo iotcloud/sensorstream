@@ -26,21 +26,20 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
 
         Map<String, String> options = ImmutableMap.of("zip", "Zookeeper hosts", "zport", "zookeeper port");
         TopologyConfiguration configuration = parseArgs(args, options);
+        String zooIps = configuration.getProperties().get("zip");
+        int zport = Integer.parseInt(configuration.getProperties().get("zport"));
+        List<String> zooServers = getZooServers(zooIps);
 
-        GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation();
-        int i = 0;
-        //for (String ip : configuration.getIp()) {
-            globalPartitionInformation.addPartition(0, Broker.fromString(configuration.getIp().get(1)));
-            globalPartitionInformation.addPartition(1, Broker.fromString(configuration.getIp().get(0)));
-            i++;
-        //}
+//        GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation();
+//        globalPartitionInformation.addPartition(0, Broker.fromString(configuration.getIp().get(1)));
+//        globalPartitionInformation.addPartition(1, Broker.fromString(configuration.getIp().get(0)));
 
-        BrokerHosts brokerHosts = new StaticHosts(globalPartitionInformation);
+        // BrokerHosts brokerHosts = new StaticHosts(globalPartitionInformation);
+        BrokerHosts brokerHosts = new ZkHosts(zkConnectionString(zooServers, zport));
         SpoutConfig spoutConfig = new SpoutConfig(brokerHosts, configuration.getRecevBaseQueueName(), "", "kafka_spout");
 
-        String zooIps = configuration.getProperties().get("zip");
-        spoutConfig.zkServers = getZooServers(zooIps);
-        spoutConfig.zkPort = Integer.parseInt(configuration.getProperties().get("zport"));
+        spoutConfig.zkServers = zooServers;
+        spoutConfig.zkPort = zport;
         spoutConfig.scheme = new TimeStampMessageBuilder();
 
         KafkaSpout spout = new KafkaSpout(spoutConfig);
@@ -53,7 +52,7 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
         config.put(KafkaBolt.KAFKA_BROKER_PROPERTIES, props);
         builder.setBolt("kafka_bolt", bolt, 1).shuffleGrouping("kafka_spout");
 
-        submit(args, "jmsTest", builder, configuration, config);
+        submit(args, "kafkaTest", builder, configuration, config);
     }
 
     private static List<String> getZooServers(String zooIps) {
@@ -106,5 +105,9 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
             ret = ret + s + ",";
         }
         return ret;
+    }
+
+    private static String zkConnectionString(List<String> brokers, int port) {
+        return "";
     }
 }
