@@ -78,7 +78,8 @@ public class KafkaPerfSensor extends AbstractPerfSensor {
                     try {
                         Long timeStamp = Long.parseLong(timeStampS);
                         long currentTime = System.currentTimeMillis();
-                        LOG.info("latency: " + (currentTime - timeStamp) + " initial time: " + timeStamp + " current: " + currentTime);
+                        calculateAverage(currentTime - timeStamp);
+                        LOG.info("latency: " + averageLatency + " initial time: " + timeStamp + " current: " + currentTime);
                     } catch (NumberFormatException e) {
                         LOG.warn("Unexpected message");
                     }

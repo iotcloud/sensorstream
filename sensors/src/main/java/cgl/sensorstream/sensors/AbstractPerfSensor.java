@@ -144,7 +144,7 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
 
     protected double averageLatency = 0;
 
-    long count = 0;
+    protected long count = 0;
 
     public void calculateAverage(long val) {
         count++;
