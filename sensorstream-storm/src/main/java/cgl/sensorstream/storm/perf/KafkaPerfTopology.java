@@ -108,6 +108,13 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
     }
 
     private static String zkConnectionString(List<String> brokers, int port) {
-        return "";
+        String str = "";
+        for (String b : brokers) {
+            str += b + ":" + port + ",";
+        }
+        if (str.length() > 0 && str.charAt(str.length() - 1) == 'x') {
+            str = str.substring(0, str.length() - 1);
+        }
+        return str;
     }
 }
