@@ -161,6 +161,7 @@ public class JMSPerfSensor extends AbstractPerfSensor {
 
     public static void main(String[] args) {
         try {
+            System.out.println("Hello");
             List<String> sites = new ArrayList<String>();
             sites.add("local-1");
             sites.add("local-2");
