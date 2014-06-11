@@ -147,7 +147,8 @@ public class KestrelPerfSensor extends AbstractPerfSensor {
 
     public static void main(String[] args) {
         List<String> sites = new ArrayList<String>();
-        sites.add("local");
+        sites.add("local-1");
+        sites.add("local-2");
         try {
             deploy(args, sites, KestrelPerfSensor.class.getCanonicalName());
         } catch (TTransportException e) {
