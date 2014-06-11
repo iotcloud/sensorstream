@@ -38,7 +38,7 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
 
         SensorConfiguration configuration = parseArgs(args);
         if (!configuration.isSameQueue()) {
-            for (int i = 0; i < configuration.getNoSensors() / sites.size(); i++) {
+            for (int i = 0; i < configuration.getNoSensors(); i++) {
                 SensorDeployDescriptor deployDescriptor = new SensorDeployDescriptor("sensors-1.0-SNAPSHOT-jar-with-dependencies.jar", className);
                 deployDescriptor.addDeploySites(sites);
                 addConfigurationsToDescriptor(configuration, deployDescriptor, i);
@@ -46,7 +46,7 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
                 client.deploySensor(deployDescriptor);
             }
         } else {
-            for (int i = 0; i < configuration.getNoSensors() / sites.size(); i++) {
+            for (int i = 0; i < configuration.getNoSensors(); i++) {
                 SensorDeployDescriptor deployDescriptor = new SensorDeployDescriptor("sensors-1.0-SNAPSHOT-jar-with-dependencies.jar", className);
                 deployDescriptor.addDeploySites(sites);
                 addConfigurationsToDescriptor(configuration, deployDescriptor, i, 0);
