@@ -167,9 +167,11 @@ public class JMSPerfSensor extends AbstractPerfSensor {
             try {
                 deploy(args, sites, JMSPerfSensor.class.getCanonicalName());
             } catch (TTransportException e) {
+                e.printStackTrace();
                 LOG.error("Error deploying the sensor", e);
             }
         } catch (Throwable t) {
+            t.printStackTrace();
             LOG.error("Error", t);
         }
     }
