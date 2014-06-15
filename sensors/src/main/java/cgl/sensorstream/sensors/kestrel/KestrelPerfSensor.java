@@ -78,7 +78,7 @@ public class KestrelPerfSensor extends AbstractPerfSensor {
                     try {
                     Long timeStamp = Long.parseLong(timeStampS);
                     long currentTime = System.currentTimeMillis();
-                    LOG.info("latency: " + (currentTime - timeStamp) + " initial time: " + timeStamp + " current: " + currentTime);
+                    LOG.info("latency: " + (currentTime - timeStamp) + " initial time: " + timeStamp + " current: " + currentTime + " difference:" + (currentTime - timeStamp));
                     } catch (NumberFormatException e) {
                         LOG.warn("Unexpected message");
                     }

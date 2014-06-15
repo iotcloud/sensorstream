@@ -82,7 +82,7 @@ public class RMQPerfSensor extends AbstractPerfSensor {
                     Long timeStamp = Long.parseLong(timeStampS);
                     long currentTime = System.currentTimeMillis();
                     calculateAverage(currentTime - timeStamp);
-                    LOG.info("latency: " + averageLatency + " initial time: " + timeStamp + " current: " + currentTime);
+                    LOG.info("latency: " + averageLatency + " initial time: " + timeStamp + " current: " + currentTime + " difference:" + (currentTime - timeStamp));
                 } else {
                     System.out.println("Unexpected message");
                 }
