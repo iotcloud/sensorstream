@@ -22,8 +22,8 @@ public class MQTTPerfTopology extends AbstractPerfTopology {
             for (String iot : ip.getIotServers()) {
                 MQTTSpout spout = new MQTTSpout(new SpoutConfigurator(iot + "." + configuration.getRecv(), ip.getUrl()), null);
                 MQTTBolt bolt = new MQTTBolt(new BoltConfigurator(iot + "." + configuration.getSend(), ip.getUrl()));
-                builder.setSpout("mqtt_spout_" + i, spout, 1);
-                builder.setBolt("mqtt_bolt_" + i, bolt, 1).shuffleGrouping("mqtt_spout_" + i);
+                builder.setSpout("mqtt_spout_" + i, spout, configuration.getParallism());
+                builder.setBolt("mqtt_bolt_" + i, bolt, configuration.getParallism()).shuffleGrouping("mqtt_spout_" + i);
                 i++;
             }
         }

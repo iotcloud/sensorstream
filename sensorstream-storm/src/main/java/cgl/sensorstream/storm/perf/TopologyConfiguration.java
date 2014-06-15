@@ -10,6 +10,7 @@ public class TopologyConfiguration implements Serializable {
     private String recv;
     private String send;
     private Map<String, String> properties = new HashMap<String, String>();
+    private int parallism = 1;
 
     public int getNoWorkers() {
         return noWorkers;
@@ -57,5 +58,13 @@ public class TopologyConfiguration implements Serializable {
 
     public void addEndpoint(String name, Endpoint endpoint) {
         endpoints.put(name, endpoint);
+    }
+
+    public int getParallism() {
+        return parallism;
+    }
+
+    public void setParallism(int parallism) {
+        this.parallism = parallism;
     }
 }

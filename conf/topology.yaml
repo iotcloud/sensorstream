@@ -1,6 +1,7 @@
 name: "perf"
 recv: "send"
 send: "recv"
+parallel: 1
 
 endpoints:
   epr1:

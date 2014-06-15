@@ -21,8 +21,8 @@ public class KestrelPerfTopology extends AbstractPerfTopology {
             // todo
             KestrelSpout spout = new KestrelSpout(new SpoutConfigurator(configuration, null));
             KestrelBolt bolt = new KestrelBolt(new BoltConfigurator(configuration, null));
-            builder.setSpout("kestrel_spout_" + i, spout, 1);
-            builder.setBolt("kestrel_bolt_" + i, bolt, 1).shuffleGrouping("kestrel_spout_" + i);
+            builder.setSpout("kestrel_spout_" + i, spout, configuration.getParallism());
+            builder.setBolt("kestrel_bolt_" + i, bolt, configuration.getParallism()).shuffleGrouping("kestrel_spout_" + i);
             i++;
         }
         submit(args, "kestrelTest", builder, configuration);
