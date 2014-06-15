@@ -6,10 +6,10 @@ parallel: 1
 endpoints:
   epr1:
       type: "jms"
-      url: "tcp://localhost:61616"
+      url: "tcp://10.39.1.22:61616"
       iot_servers: ["local-1", "local-2"]
-  epr2:
-      type: "rabbitmq"
-      url: "amqp://localhost:5672"
-      iot_servers: ["local-1", "local-2"]
-      exchange: "perfSensor"
+  #epr2:
+  #    type: "rabbitmq"
+  #    url: "amqp://localhost:5672"
+  #    iot_servers: ["local-1", "local-2"]
+  #    exchange: "perfSensor"
