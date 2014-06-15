@@ -21,7 +21,7 @@ public abstract class AbstractPerfTopology {
         String rQueue = (String) conf.get("recv");
         String sQueue = (String) conf.get("send");
         String tpName = (String) conf.get("name");
-        int parelism = (int) conf.get("parallel");
+        int parelism = (Integer) conf.get("parallel");
 
         configuration.setRecv(rQueue);
         configuration.setSend(sQueue);
