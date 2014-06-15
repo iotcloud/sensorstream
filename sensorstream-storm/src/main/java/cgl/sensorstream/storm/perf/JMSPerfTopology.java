@@ -24,10 +24,10 @@ public class JMSPerfTopology extends AbstractPerfTopology {
         for (Endpoint ip : configuration.getEndpoints()) {
             for (String iot : ip.getIotServers()) {
                 JMSSpout spout = new JMSSpout(new SpoutConfigurator(iot + "." + configuration.getRecv(), ip.getUrl()), null);
-                builder.setSpout("jms_spout_" + i, spout, 1);
+                builder.setSpout("jms_spout_" + i, spout, 2);
 
                 JMSBolt bolt = new JMSBolt(new BoltConfigurator(iot + "." + configuration.getSend(), ip.getUrl()), null);
-                builder.setBolt("jms_bolt_" + i, bolt, 1).shuffleGrouping("jms_spout_" + i);
+                builder.setBolt("jms_bolt_" + i, bolt, 2).shuffleGrouping("jms_spout_" + i);
                 i++;
             }
         }
