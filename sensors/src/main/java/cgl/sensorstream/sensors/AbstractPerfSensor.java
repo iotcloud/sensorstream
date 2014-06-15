@@ -152,7 +152,7 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
         count++;
         if (count > 200 && !startCount) {
             startCount = true;
-            count = 0;
+            count = 1;
         }
         if (startCount) {
             double delta = val - averageLatency;
