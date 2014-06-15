@@ -78,7 +78,8 @@ public class MQTTPerfSensor extends AbstractPerfSensor {
                     }
                     Long timeStamp = Long.parseLong(timeStampS);
                     long currentTime = System.currentTimeMillis();
-                    LOG.info("latency: " + (currentTime - timeStamp) + " initial time: " + timeStamp + " current: " + currentTime + " difference:" + (currentTime - timeStamp));
+                    calculateAverage(currentTime - timeStamp);
+                    LOG.info("latency: " + averageLatency + " initial time: " + timeStamp + " current: " + currentTime + " difference:" + (currentTime - timeStamp));
                 } else {
                     LOG.error("Unexpected message");
                 }
