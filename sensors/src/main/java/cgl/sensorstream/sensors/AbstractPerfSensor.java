@@ -150,7 +150,7 @@ public abstract class AbstractPerfSensor extends AbstractSensor {
 
     public void calculateAverage(long val) {
         count++;
-        if (count > 200) {
+        if (count > 200 && !startCount) {
             startCount = true;
             count = 0;
         }
