@@ -15,11 +15,12 @@ import java.util.*;
 public class KestrelPerfTopology extends AbstractPerfTopology {
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
-        TopologyConfiguration configuration = parseArgs(args);
+        TopologyConfiguration configuration = parseArgs(args[0], null);
         int i = 0;
-        for (String ip : configuration.getIp()) {
-            KestrelSpout spout = new KestrelSpout(new SpoutConfigurator(configuration, ip));
-            KestrelBolt bolt = new KestrelBolt(new BoltConfigurator(configuration, ip));
+        for (Endpoint ip : configuration.getEndpoints()) {
+            // todo
+            KestrelSpout spout = new KestrelSpout(new SpoutConfigurator(configuration, null));
+            KestrelBolt bolt = new KestrelBolt(new BoltConfigurator(configuration, null));
             builder.setSpout("kestrel_spout_" + i, spout, 1);
             builder.setBolt("kestrel_bolt_" + i, bolt, 1).shuffleGrouping("kestrel_spout_" + i);
             i++;
@@ -96,9 +97,9 @@ public class KestrelPerfTopology extends AbstractPerfTopology {
 
         public List<String> destinations() {
             List<String> destinations = new ArrayList<String>();
-            for (int i = 0; i < configuration.getNoQueues(); i++) {
-                destinations.add(configuration.getRecevBaseQueueName() + "_" + i);
-            }
+//            for (int i = 0; i < configuration.getNoQueues(); i++) {
+//                destinations.add(configuration.getRecv() + "_" + i);
+//            }
             return destinations;
         }
 
@@ -171,9 +172,9 @@ public class KestrelPerfTopology extends AbstractPerfTopology {
 
         public List<String> destinations() {
             List<String> destinations = new ArrayList<String>();
-            for (int i = 0; i < configuration.getNoQueues(); i++) {
-                destinations.add(configuration.getSendBaseQueueName() + "_" + i);
-            }
+//            for (int i = 0; i < configuration.getNoQueues(); i++) {
+//                destinations.add(configuration.getSend() + "_" + i);
+//            }
             return destinations;
         }
 
@@ -223,7 +224,7 @@ public class KestrelPerfTopology extends AbstractPerfTopology {
             String queue = message.getQueue();
             if (queue != null) {
                 String queueNumber = queue.substring(queue.indexOf("_") + 1);
-                return configuration.getSendBaseQueueName() + "_" + queueNumber;
+                return configuration.getSend() + "_" + queueNumber;
             }
             return null;
         }

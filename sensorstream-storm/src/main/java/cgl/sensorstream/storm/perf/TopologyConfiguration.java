@@ -1,72 +1,38 @@
 package cgl.sensorstream.storm.perf;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class TopologyConfiguration implements Serializable {
     private int noWorkers = 4;
-
-    private String topologyName = "perf";
-
-    private List<String> ip;
-
-    private int noQueues;
-
-    private String recevBaseQueueName;
-
-    private String sendBaseQueueName;
-
-    private boolean local;
-
+    private String name = "perf";
+    private Map<String, Endpoint> endpoints = new HashMap<String, Endpoint>();
+    private String recv;
+    private String send;
     private Map<String, String> properties = new HashMap<String, String>();
-
-    public TopologyConfiguration(List<String> ip, int noQueues, String baseQueueName, String sendBaseQueueName) {
-        this.ip = ip;
-        this.noQueues = noQueues;
-        this.recevBaseQueueName = baseQueueName;
-        this.sendBaseQueueName = sendBaseQueueName;
-    }
-
-    public boolean isLocal() {
-        return local;
-    }
-
-    public void setLocal(boolean local) {
-        this.local = local;
-    }
 
     public int getNoWorkers() {
         return noWorkers;
     }
 
-    public String getTopologyName() {
-        return topologyName;
+    public String getName() {
+        return name;
     }
 
-    public List<String> getIp() {
-        return ip;
-    }
-
-    public int getNoQueues() {
-        return noQueues;
-    }
-
-    public String getRecevBaseQueueName() {
-        return recevBaseQueueName;
+    public String getRecv() {
+        return recv;
     }
 
     public void setNoWorkers(int noWorkers) {
         this.noWorkers = noWorkers;
     }
 
-    public void setTopologyName(String topologyName) {
-        this.topologyName = topologyName;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public String getSendBaseQueueName() {
-        return sendBaseQueueName;
+    public String getSend() {
+        return send;
     }
 
     public void addProperty(String key, String value) {
@@ -75,5 +41,21 @@ public class TopologyConfiguration implements Serializable {
 
     public Map<String, String> getProperties() {
         return properties;
+    }
+
+    public List<Endpoint> getEndpoints() {
+        return new ArrayList<Endpoint>(endpoints.values());
+    }
+
+    public void setSend(String send) {
+        this.send = send;
+    }
+
+    public void setRecv(String recv) {
+        this.recv = recv;
+    }
+
+    public void addEndpoint(String name, Endpoint endpoint) {
+        endpoints.put(name, endpoint);
     }
 }

@@ -19,18 +19,18 @@ public class JMSPerfTopology extends AbstractPerfTopology {
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
 
-        TopologyConfiguration configuration = parseArgs(args);
-
+        TopologyConfiguration configuration = parseArgs(args[0], null);
         int i = 0;
-        for (String ip : configuration.getIp()) {
-            JMSSpout spout = new JMSSpout(new SpoutConfigurator(configuration, ip), null);
-            builder.setSpout("jms_spout_" + i, spout, 1);
+        for (Endpoint ip : configuration.getEndpoints()) {
+            for (String iot : ip.getIotServers()) {
+                JMSSpout spout = new JMSSpout(new SpoutConfigurator(iot + "." + configuration.getRecv(), ip.getUrl()), null);
+                builder.setSpout("jms_spout_" + i, spout, 1);
 
-            JMSBolt bolt = new JMSBolt(new BoltConfigurator(configuration, ip), null);
-            builder.setBolt("jms_bolt_" + i, bolt, 1).shuffleGrouping("jms_spout_" + i);
-            i++;
+                JMSBolt bolt = new JMSBolt(new BoltConfigurator(iot + "." + configuration.getSend(), ip.getUrl()), null);
+                builder.setBolt("jms_bolt_" + i, bolt, 1).shuffleGrouping("jms_spout_" + i);
+                i++;
+            }
         }
-
         submit(args, "jmsTest", builder, configuration);
     }
 
@@ -108,15 +108,11 @@ public class JMSPerfTopology extends AbstractPerfTopology {
     }
 
     private static class SpoutConfigurator implements JMSConfigurator {
-        TopologyConfiguration configuration;
-
         ActiveMQConnectionFactory connectionFactory;
 
         Map<String, Destination> destinations;
 
-        private SpoutConfigurator(TopologyConfiguration configuration, String ip) {
-            this.configuration = configuration;
-
+        private SpoutConfigurator(String recv, String ip) {
             destinations = new HashMap<String, Destination>();
             this.connectionFactory = new ActiveMQConnectionFactory(ip);
             connectionFactory.setOptimizeAcknowledge(true);
@@ -125,13 +121,8 @@ public class JMSPerfTopology extends AbstractPerfTopology {
             try {
                 connection = connectionFactory.createConnection();
                 connection.start();
-
                 Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                for (int i = 0; i < configuration.getNoQueues(); i++) {
-                    this.destinations.put(configuration.getRecevBaseQueueName() + "_" + i,
-                            session.createQueue(configuration.getRecevBaseQueueName() + "_" + i));
-                }
-
+                this.destinations.put(recv, session.createQueue(recv));
                 connection.close();
             } catch (JMSException e) {
                 e.printStackTrace();
@@ -169,15 +160,14 @@ public class JMSPerfTopology extends AbstractPerfTopology {
     }
 
     private static class BoltConfigurator implements JMSConfigurator {
-        TopologyConfiguration configuration;
-
         ActiveMQConnectionFactory connectionFactory;
 
         Map<String, Destination> destinations;
 
-        private BoltConfigurator(TopologyConfiguration configuration, String ip) {
-            this.configuration = configuration;
+        String send;
 
+        private BoltConfigurator(String send, String ip) {
+            this.send = send;
             destinations = new HashMap<String, Destination>();
             this.connectionFactory = new ActiveMQConnectionFactory(ip);
             connectionFactory.setOptimizeAcknowledge(true);
@@ -186,13 +176,8 @@ public class JMSPerfTopology extends AbstractPerfTopology {
             try {
                 connection = connectionFactory.createConnection();
                 connection.start();
-
                 Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                for (int i = 0; i < configuration.getNoQueues(); i++) {
-                    this.destinations.put(configuration.getSendBaseQueueName() + "_" + i,
-                            session.createQueue(configuration.getSendBaseQueueName() + "_" + i));
-                }
-
+                    this.destinations.put(send, session.createQueue(send));
                 connection.close();
             } catch (JMSException e) {
                 e.printStackTrace();
@@ -225,26 +210,20 @@ public class JMSPerfTopology extends AbstractPerfTopology {
 
         @Override
         public JMSDestinationSelector getDestinationSelector() {
-            return new PerfDestinationSelector(configuration);
+            return new PerfDestinationSelector(send);
         }
     }
 
     private static class PerfDestinationSelector implements JMSDestinationSelector {
-        private TopologyConfiguration configuration;
+        String send;
 
-        private PerfDestinationSelector(TopologyConfiguration configuration) {
-            this.configuration = configuration;
+        private PerfDestinationSelector(String send) {
+            this.send = send;
         }
 
         @Override
         public String select(Tuple tuple) {
-            SendMessage mqttMessage = (SendMessage) tuple.getValue(0);
-            String queue = mqttMessage.getQueue();
-            if (queue != null) {
-                String queueNumber = queue.substring(queue.indexOf("_") + 1);
-                return configuration.getSendBaseQueueName() + "_" + queueNumber;
-            }
-            return null;
+            return send;
         }
     }
 }

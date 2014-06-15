@@ -7,15 +7,11 @@ import backtype.storm.tuple.Fields;
 import com.google.common.collect.ImmutableMap;
 import storm.kafka.*;
 import storm.kafka.bolt.KafkaBolt;
-import storm.kafka.trident.GlobalPartitionInformation;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;
-
-import static backtype.storm.utils.Utils.tuple;
-import static java.util.Arrays.asList;
 
 
 public class KafkaPerfTopology extends AbstractPerfTopology {
@@ -25,7 +21,7 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
         Config config = new Config();
 
         Map<String, String> options = ImmutableMap.of("zip", "Zookeeper hosts", "zport", "zookeeper port");
-        TopologyConfiguration configuration = parseArgs(args, options);
+        TopologyConfiguration configuration = parseArgs(args[0], options);
         String zooIps = configuration.getProperties().get("zip");
         int zport = Integer.parseInt(configuration.getProperties().get("zport"));
         List<String> zooServers = getZooServers(zooIps);
@@ -36,7 +32,7 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
 
         // BrokerHosts brokerHosts = new StaticHosts(globalPartitionInformation);
         BrokerHosts brokerHosts = new ZkHosts(zkConnectionString(zooServers, zport));
-        SpoutConfig spoutConfig = new SpoutConfig(brokerHosts, configuration.getRecevBaseQueueName(), "", "kafka_spout");
+        SpoutConfig spoutConfig = new SpoutConfig(brokerHosts, configuration.getRecv(), "", "kafka_spout");
 
         spoutConfig.zkServers = zooServers;
         spoutConfig.zkPort = zport;
@@ -46,9 +42,10 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
         builder.setSpout("kafka_spout", spout, 1);
 
         KafkaBolt bolt = new KafkaBolt();
-        config.put(KafkaBolt.TOPIC, configuration.getSendBaseQueueName());
+        config.put(KafkaBolt.TOPIC, configuration.getSend());
         Map<String, Object> props = new HashMap<String, Object>();
-        props.put("metadata.broker.list", brokerList(configuration.getIp()));
+        // todo fix
+        //props.put("metadata.broker.list", brokerList(configuration.getEndpoints()));
         config.put(KafkaBolt.KAFKA_BROKER_PROPERTIES, props);
         builder.setBolt("kafka_bolt", bolt, 1).shuffleGrouping("kafka_spout");
 

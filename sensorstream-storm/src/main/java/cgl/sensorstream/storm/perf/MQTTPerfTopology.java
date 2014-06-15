@@ -16,17 +16,17 @@ import java.util.*;
 public class MQTTPerfTopology extends AbstractPerfTopology {
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
-
-        TopologyConfiguration configuration = parseArgs(args);
+        TopologyConfiguration configuration = parseArgs(args[0], null);
         int i = 0;
-        for (String ip : configuration.getIp()) {
-            MQTTSpout spout = new MQTTSpout(new SpoutConfigurator(configuration, ip), null);
-            MQTTBolt bolt = new MQTTBolt(new BoltConfigurator(configuration, ip));
-            builder.setSpout("mqtt_spout_" + i, spout, 1);
-            builder.setBolt("mqtt_bolt_" + i, bolt, 1).shuffleGrouping("mqtt_spout_" + i);
-            i++;
+        for (Endpoint ip : configuration.getEndpoints()) {
+            for (String iot : ip.getIotServers()) {
+                MQTTSpout spout = new MQTTSpout(new SpoutConfigurator(iot + "." + configuration.getRecv(), ip.getUrl()), null);
+                MQTTBolt bolt = new MQTTBolt(new BoltConfigurator(iot + "." + configuration.getSend(), ip.getUrl()));
+                builder.setSpout("mqtt_spout_" + i, spout, 1);
+                builder.setBolt("mqtt_bolt_" + i, bolt, 1).shuffleGrouping("mqtt_spout_" + i);
+                i++;
+            }
         }
-
         submit(args, "mqttTest", builder, configuration);
     }
 
@@ -65,12 +65,13 @@ public class MQTTPerfTopology extends AbstractPerfTopology {
     }
 
     private static class SpoutConfigurator implements MQTTConfigurator {
-        private TopologyConfiguration configuration;
         private String ip;
 
-        public SpoutConfigurator(TopologyConfiguration configuration, String ip) {
-            this.configuration = configuration;
+        private String recv;
+
+        private SpoutConfigurator(String recv, String ip) {
             this.ip = ip;
+            this.recv = recv;
         }
 
         public MessageBuilder getMessageBuilder() {
@@ -90,9 +91,7 @@ public class MQTTPerfTopology extends AbstractPerfTopology {
         @Override
         public List<String> getQueueName() {
             List<String> list = new ArrayList<String>();
-            for (int i = 0; i < configuration.getNoQueues(); i++) {
-                list.add(configuration.getRecevBaseQueueName() + "_" + i);
-            }
+            list.add(recv);
             return list;
         }
 
@@ -111,13 +110,13 @@ public class MQTTPerfTopology extends AbstractPerfTopology {
     }
 
     private static class BoltConfigurator implements MQTTConfigurator {
-        private TopologyConfiguration configuration;
-
         private String ip;
 
-        private BoltConfigurator(TopologyConfiguration configuration, String ip) {
-            this.configuration = configuration;
+        String send;
+
+        private BoltConfigurator(String send, String ip) {
             this.ip = ip;
+            this.send = send;
         }
 
         public MessageBuilder getMessageBuilder() {
@@ -137,9 +136,7 @@ public class MQTTPerfTopology extends AbstractPerfTopology {
         @Override
         public List<String> getQueueName() {
             List<String> list = new ArrayList<String>();
-            for (int i = 0; i < configuration.getNoQueues(); i++) {
-                list.add(configuration.getSendBaseQueueName() + "_" + i);
-            }
+            list.add(send);
             return list;
         }
 
@@ -156,13 +153,7 @@ public class MQTTPerfTopology extends AbstractPerfTopology {
             return new DestinationSelector() {
                 @Override
                 public String select(Tuple message) {
-                    BoltMessage mqttMessage = (BoltMessage) message.getValue(0);
-                    String queue = mqttMessage.getQueue();
-                    if (queue != null) {
-                        String queueNumber = queue.substring(queue.indexOf("_") + 1);
-                        return configuration.getSendBaseQueueName() + "_" + queueNumber;
-                    }
-                    return null;
+                    return send;
                 }
             };
         }

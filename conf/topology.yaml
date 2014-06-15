@@ -1,0 +1,14 @@
+name: "perf"
+recv: "send"
+send: "recv"
+
+endpoints:
+  epr1:
+      type: "jms"
+      url: "tcp://localhost:61616"
+      iot_servers: ["local-1", "local-2"]
+  epr2:
+      type: "rabbitmq"
+      url: "amqp://localhost:5672"
+      iot_servers: ["local-1", "local-2"]
+      exchange: "perfSensor"

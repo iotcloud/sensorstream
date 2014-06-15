@@ -4,7 +4,6 @@ import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
-import com.rabbitmq.client.AMQP;
 import com.ss.rabbitmq.*;
 import com.ss.rabbitmq.bolt.RabbitMQBolt;
 
@@ -13,14 +12,12 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class RRPerfTopology extends AbstractPerfTopology {
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
-        TopologyConfiguration configuration = parseArgs(args);
+        TopologyConfiguration configuration = parseArgs(args[0], null);
 
         ErrorReporter r = new ErrorReporter() {
             @Override
@@ -30,12 +27,14 @@ public class RRPerfTopology extends AbstractPerfTopology {
         };
 
         int i = 0;
-        for (String ip : configuration.getIp()) {
-            RabbitMQSpout spout = new RabbitMQSpout(new SpoutConfigurator(configuration, ip), r);
-            RabbitMQBolt bolt = new RabbitMQBolt(new BoltConfigurator(configuration, ip), r);
-            builder.setSpout("rabbit_spout_" + i, spout, 1);
-            builder.setBolt("rabbit_bolt_" + i, bolt, 2).shuffleGrouping("rabbit_spout_" + i);
-            i++;
+        for (Endpoint ip : configuration.getEndpoints()) {
+            for (String iot : ip.getIotServers()) {
+                RabbitMQSpout spout = new RabbitMQSpout(new SpoutConfigurator(iot + "." + configuration.getRecv(), ip.getUrl(), ip.getProperties().get("exchange")), r);
+                RabbitMQBolt bolt = new RabbitMQBolt(new BoltConfigurator(iot + "." +  configuration.getRecv(), ip.getUrl(), ip.getProperties().get("exchange")), r);
+                builder.setSpout("rabbit_spout_" + i, spout, 1);
+                builder.setBolt("rabbit_bolt_" + i, bolt, 1).shuffleGrouping("rabbit_spout_" + i);
+                i++;
+            }
         }
         submit(args, "rabbitTest", builder, configuration);
     }
@@ -95,13 +94,16 @@ public class RRPerfTopology extends AbstractPerfTopology {
     private static class SpoutConfigurator implements RabbitMQConfigurator {
         private String url = "amqp://localhost:5672";
 
-        private TopologyConfiguration configuration;
-
         private String ip;
 
-        private SpoutConfigurator(TopologyConfiguration configuration, String ip) {
-            this.configuration = configuration;
+        private String recv;
+
+        private String exchange;
+
+        private SpoutConfigurator(String recv, String ip, String exchange) {
+            this.recv = recv;
             this.ip = ip;
+            this.exchange = exchange;
         }
 
         @Override
@@ -132,10 +134,7 @@ public class RRPerfTopology extends AbstractPerfTopology {
         @Override
         public List<RabbitMQDestination> getQueueName() {
             List<RabbitMQDestination> list = new ArrayList<RabbitMQDestination>();
-            for (int i = 0; i < configuration.getNoQueues(); i++) {
-                list.add(new RabbitMQDestination(configuration.getRecevBaseQueueName() + "_" + i,
-                        "perfSensor", configuration.getRecevBaseQueueName() + "_" + i));
-            }
+            list.add(new RabbitMQDestination(recv, exchange, recv));
             return list;
         }
 
@@ -163,13 +162,16 @@ public class RRPerfTopology extends AbstractPerfTopology {
     private static class BoltConfigurator implements RabbitMQConfigurator {
         private String url = "amqp://localhost:5672";
 
-        private TopologyConfiguration configuration;
-
         private String ip;
 
-        private BoltConfigurator(TopologyConfiguration configuration, String ip) {
-            this.configuration = configuration;
+        private String send;
+
+        private String exchange;
+
+        private BoltConfigurator(String send, String ip, String exchange) {
             this.ip = ip;
+            this.send = send;
+            this.exchange = exchange;
         }
 
         @Override
@@ -200,9 +202,7 @@ public class RRPerfTopology extends AbstractPerfTopology {
         @Override
         public List<RabbitMQDestination> getQueueName() {
             List<RabbitMQDestination> list = new ArrayList<RabbitMQDestination>();
-            for (int i = 0; i < configuration.getNoQueues(); i++) {
-                list.add(new RabbitMQDestination(configuration.getSendBaseQueueName() + "_" + i, "perfSensor", configuration.getSendBaseQueueName() + "_" + i));
-            }
+            list.add(new RabbitMQDestination(send, exchange, send));
             return list;
         }
 
@@ -226,13 +226,7 @@ public class RRPerfTopology extends AbstractPerfTopology {
             return new RabbitMQDestinationSelector() {
                 @Override
                 public String select(Tuple message) {
-                    SendMessage mqttMessage = (SendMessage) message.getValue(0);
-                    String queue = mqttMessage.getQueue();
-                    if (queue != null) {
-                        String queueNumber = queue.substring(queue.indexOf("_") + 1);
-                        return configuration.getSendBaseQueueName() + "_" + queueNumber;
-                    }
-                    return null;
+                    return send;
                 }
             };
         }
