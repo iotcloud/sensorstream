@@ -85,7 +85,7 @@ public class JMSPerfSensor extends AbstractPerfSensor {
                         }
                         Long timeStamp = Long.parseLong(timeStampS);
                         calculateAverage(currentTime - timeStamp);
-                        LOG.info("latency: " + averageLatency + " initial time: " + timeStamp + " current: " + currentTime);
+                        LOG.info("latency: " + averageLatency + " initial time: " + timeStamp + " current: " + currentTime + " difference: " + (timeStamp - currentTime));
                     } catch (JMSException e) {
                         LOG.error("Error", e);
                     }
