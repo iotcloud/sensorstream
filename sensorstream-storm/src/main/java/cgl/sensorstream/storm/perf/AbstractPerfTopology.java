@@ -48,6 +48,12 @@ public abstract class AbstractPerfTopology {
                         }
                     }
 
+                    for (Object o : tp.entrySet()) {
+                        if (o instanceof Map.Entry) {
+                            endpoint.addProperty(((Map.Entry) o).getKey().toString(), ((Map.Entry) o).getValue().toString());
+                        }
+                    }
+
                     configuration.addEndpoint(epr, endpoint);
                 }
             }
