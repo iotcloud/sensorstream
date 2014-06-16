@@ -20,34 +20,34 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
 
         Config config = new Config();
 
-        Map<String, String> options = ImmutableMap.of("zip", "Zookeeper hosts", "zport", "zookeeper port");
-        TopologyConfiguration configuration = parseArgs(args[0], options);
-        String zooIps = configuration.getProperties().get("zip");
-        int zport = Integer.parseInt(configuration.getProperties().get("zport"));
-        List<String> zooServers = getZooServers(zooIps);
+//        Map<String, String> options = ImmutableMap.of("zip", "Zookeeper hosts", "zport", "zookeeper port");
+        TopologyConfiguration configuration = parseArgs(args[0], null);
 
-//        GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation();
-//        globalPartitionInformation.addPartition(0, Broker.fromString(configuration.getIp().get(1)));
-//        globalPartitionInformation.addPartition(1, Broker.fromString(configuration.getIp().get(0)));
+        for (Endpoint ip : configuration.getEndpoints()) {
+            for (String iot : ip.getIotServers()) {
+                String zooIps = ip.getProperties().get("zkIp");
+                int zport = Integer.parseInt(ip.getProperties().get("zPort"));
+                List<String> zooServers = getZooServers(zooIps);
 
-        // BrokerHosts brokerHosts = new StaticHosts(globalPartitionInformation);
-        BrokerHosts brokerHosts = new ZkHosts(zkConnectionString(zooServers, zport));
-        SpoutConfig spoutConfig = new SpoutConfig(brokerHosts, configuration.getRecv(), "", "kafka_spout");
+                BrokerHosts brokerHosts = new ZkHosts(zkConnectionString(zooServers, zport));
+                SpoutConfig spoutConfig = new SpoutConfig(brokerHosts, iot + "." +  configuration.getRecv(), "", "kafka_spout");
 
-        spoutConfig.zkServers = zooServers;
-        spoutConfig.zkPort = zport;
-        spoutConfig.scheme = new TimeStampMessageBuilder();
+                spoutConfig.zkServers = zooServers;
+                spoutConfig.zkPort = zport;
+                spoutConfig.scheme = new TimeStampMessageBuilder();
 
-        KafkaSpout spout = new KafkaSpout(spoutConfig);
-        builder.setSpout("kafka_spout", spout, 1);
+                KafkaSpout spout = new KafkaSpout(spoutConfig);
+                builder.setSpout("kafka_spout", spout, configuration.getParallism());
 
-        KafkaBolt bolt = new KafkaBolt();
-        config.put(KafkaBolt.TOPIC, configuration.getSend());
-        Map<String, Object> props = new HashMap<String, Object>();
-        // todo fix
-        //props.put("metadata.broker.list", brokerList(configuration.getEndpoints()));
-        config.put(KafkaBolt.KAFKA_BROKER_PROPERTIES, props);
-        builder.setBolt("kafka_bolt", bolt, 1).shuffleGrouping("kafka_spout");
+                KafkaBolt bolt = new KafkaBolt();
+                config.put(KafkaBolt.TOPIC, iot + "." + configuration.getSend());
+                Map<String, Object> props = new HashMap<String, Object>();
+                // todo fix
+                props.put("metadata.broker.list", ip.getUrl());
+                config.put(KafkaBolt.KAFKA_BROKER_PROPERTIES, props);
+                builder.setBolt("kafka_bolt", bolt, 1).shuffleGrouping("kafka_spout");
+            }
+        }
 
         submit(args, "kafkaTest", builder, configuration, config);
     }

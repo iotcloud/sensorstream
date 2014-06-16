@@ -10,6 +10,12 @@ endpoints:
       iot_servers: ["local-1", "local-2"]
   #epr2:
   #    type: "rabbitmq"
-  #    url: "amqp://localhost:5672"
+  #    url: "amqp://10.39.1.22:5672"
   #    iot_servers: ["local-1", "local-2"]
   #    exchange: "perfSensor"
+  epr3:
+      type: "kafka"
+      url: "10.39.1.22:9093"
+      iot_servers: ["local-1", "local-2"]
+      zIP: "10.39.1.45"
+      zPort: 2181
