@@ -42,11 +42,12 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
                 KafkaSpout spout = new KafkaSpout(spoutConfig);
                 builder.setSpout("kafka_spout_" + i, spout, configuration.getParallism());
 
-                KafkaBolt bolt = new KafkaBolt();
+
                 Map<String, Object> props = new HashMap<String, Object>();
                 // todo fix
                 props.put("metadata.broker.list", ip.getUrl());
                 BoltConfig boltConfig = new BoltConfig(iot + "." + configuration.getSend(), props);
+                KafkaBolt bolt = new KafkaBolt(boltConfig);
                 // config.put(KafkaBolt.TOPIC, iot + "." + configuration.getSend());
 
                 // config.put(KafkaBolt.KAFKA_BROKER_PROPERTIES, props);
