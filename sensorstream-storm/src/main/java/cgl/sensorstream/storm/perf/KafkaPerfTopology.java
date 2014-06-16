@@ -23,6 +23,7 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
 //        Map<String, String> options = ImmutableMap.of("zip", "Zookeeper hosts", "zport", "zookeeper port");
         TopologyConfiguration configuration = parseArgs(args[0], null);
 
+        int i = 0;
         for (Endpoint ip : configuration.getEndpoints()) {
             for (String iot : ip.getIotServers()) {
                 String zooIps = ip.getProperties().get("zkIp");
@@ -37,7 +38,7 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
                 spoutConfig.scheme = new TimeStampMessageBuilder();
 
                 KafkaSpout spout = new KafkaSpout(spoutConfig);
-                builder.setSpout("kafka_spout", spout, configuration.getParallism());
+                builder.setSpout("kafka_spout_" + i, spout, configuration.getParallism());
 
                 KafkaBolt bolt = new KafkaBolt();
                 config.put(KafkaBolt.TOPIC, iot + "." + configuration.getSend());
@@ -45,7 +46,8 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
                 // todo fix
                 props.put("metadata.broker.list", ip.getUrl());
                 config.put(KafkaBolt.KAFKA_BROKER_PROPERTIES, props);
-                builder.setBolt("kafka_bolt", bolt, 1).shuffleGrouping("kafka_spout");
+                builder.setBolt("kafka_bolt_" + i, bolt, 1).shuffleGrouping("kafka_spout");
+                i++;
             }
         }
 

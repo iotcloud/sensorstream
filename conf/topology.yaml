@@ -4,10 +4,10 @@ send: "recv"
 parallel: 1
 
 endpoints:
-  epr1:
-      type: "jms"
-      url: "tcp://10.39.1.22:61616"
-      iot_servers: ["local-1", "local-2"]
+  #epr1:
+  #    type: "jms"
+  #    url: "tcp://10.39.1.22:61616"
+  #    iot_servers: ["local-1", "local-2"]
   #epr2:
   #    type: "rabbitmq"
   #    url: "amqp://10.39.1.22:5672"
@@ -17,5 +17,5 @@ endpoints:
       type: "kafka"
       url: "10.39.1.22:9093"
       iot_servers: ["local-1", "local-2"]
-      zkIP: "10.39.1.45"
+      zkIp: "10.39.1.45"
       zPort: 2181
