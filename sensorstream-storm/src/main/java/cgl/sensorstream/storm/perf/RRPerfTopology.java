@@ -30,7 +30,7 @@ public class RRPerfTopology extends AbstractPerfTopology {
         for (Endpoint ip : configuration.getEndpoints()) {
             for (String iot : ip.getIotServers()) {
                 RabbitMQSpout spout = new RabbitMQSpout(new SpoutConfigurator(iot + "." + configuration.getRecv(), ip.getUrl(), ip.getProperties().get("exchange")), r);
-                RabbitMQBolt bolt = new RabbitMQBolt(new BoltConfigurator(iot + "." +  configuration.getRecv(), ip.getUrl(), ip.getProperties().get("exchange")), r);
+                RabbitMQBolt bolt = new RabbitMQBolt(new BoltConfigurator(iot + "." +  configuration.getSend(), ip.getUrl(), ip.getProperties().get("exchange")), r);
                 builder.setSpout("rabbit_spout_" + i, spout, configuration.getParallism());
                 builder.setBolt("rabbit_bolt_" + i, bolt, configuration.getParallism()).shuffleGrouping("rabbit_spout_" + i);
                 i++;
