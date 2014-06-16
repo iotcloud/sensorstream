@@ -6,6 +6,7 @@ import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
 import com.google.common.collect.ImmutableMap;
 import storm.kafka.*;
+import storm.kafka.bolt.BoltConfig;
 import storm.kafka.bolt.KafkaBolt;
 
 import java.io.BufferedReader;
@@ -18,14 +19,15 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
 
-        Config config = new Config();
 
+        Config config = new Config();
 //        Map<String, String> options = ImmutableMap.of("zip", "Zookeeper hosts", "zport", "zookeeper port");
         TopologyConfiguration configuration = parseArgs(args[0], null);
 
         int i = 0;
         for (Endpoint ip : configuration.getEndpoints()) {
             for (String iot : ip.getIotServers()) {
+
                 String zooIps = ip.getProperties().get("zkIp");
                 int zport = Integer.parseInt(ip.getProperties().get("zPort"));
                 List<String> zooServers = getZooServers(zooIps);
@@ -41,11 +43,13 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
                 builder.setSpout("kafka_spout_" + i, spout, configuration.getParallism());
 
                 KafkaBolt bolt = new KafkaBolt();
-                config.put(KafkaBolt.TOPIC, iot + "." + configuration.getSend());
                 Map<String, Object> props = new HashMap<String, Object>();
                 // todo fix
                 props.put("metadata.broker.list", ip.getUrl());
-                config.put(KafkaBolt.KAFKA_BROKER_PROPERTIES, props);
+                BoltConfig boltConfig = new BoltConfig(iot + "." + configuration.getSend(), props);
+                // config.put(KafkaBolt.TOPIC, iot + "." + configuration.getSend());
+
+                // config.put(KafkaBolt.KAFKA_BROKER_PROPERTIES, props);
                 builder.setBolt("kafka_bolt_" + i, bolt, configuration.getParallism()).shuffleGrouping("kafka_spout_" + i);
                 i++;
             }
