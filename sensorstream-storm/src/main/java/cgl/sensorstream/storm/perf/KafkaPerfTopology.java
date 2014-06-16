@@ -46,7 +46,7 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
                 // todo fix
                 props.put("metadata.broker.list", ip.getUrl());
                 config.put(KafkaBolt.KAFKA_BROKER_PROPERTIES, props);
-                builder.setBolt("kafka_bolt_" + i, bolt, 1).shuffleGrouping("kafka_spout");
+                builder.setBolt("kafka_bolt_" + i, bolt, 1).shuffleGrouping("kafka_spout_" + i);
                 i++;
             }
         }
