@@ -33,7 +33,7 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
                 List<String> zooServers = getZooServers(zooIps);
 
                 BrokerHosts brokerHosts = new ZkHosts(zkConnectionString(zooServers, zport));
-                SpoutConfig spoutConfig = new SpoutConfig(brokerHosts, iot + "." +  configuration.getRecv(), "", "kafka_spout");
+                SpoutConfig spoutConfig = new SpoutConfig(brokerHosts, iot + "." +  configuration.getRecv(), "", "kafka_spout_" + i);
 
                 spoutConfig.zkServers = zooServers;
                 spoutConfig.zkPort = zport;
