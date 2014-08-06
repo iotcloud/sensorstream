@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sun.management.resources.agent_pt_BR;
 
+import java.util.List;
 import java.util.Map;
 
 public class Configuration {
@@ -31,16 +32,22 @@ public class Configuration {
 
     public static final String SS_ZOOKEEPER_RETRY_INTERVALCEILING_MILLIS = "ss.zookeeper.retry.intervalceiling.millis";
 
-    // number of updates that we can handle at a given time
-    public static final String SS_SENSOR_UPDATES_SIZE = "ss.sensor.updates.size";
-    // the broker url to be used
-    public static final String SS_BROKER_URL = "ss.broker.url";
-    // the update listening queue
-    public static final String SS_BROKER_UPDATE_QUEUE = "ss.broker.update.queue";
-    
     public static final String SS_ZOOKEEPER_UPDATES_SIZE = "ss.zookeeper.updates.size";
 
     public static String getZkRoot(Map conf) {
         return (String) conf.get(SS_ZOOKEEPER_ROOT);
+    }
+
+    public static final String ZK_SERVERS = "zk.servers";
+
+    public static String getZkConnection(Map conf) {
+        Object o = conf.get(ZK_SERVERS);
+        StringBuilder buffer = new StringBuilder();
+        if (o instanceof List) {
+            for (Object s : (List)o) {
+                buffer.append(s.toString());
+            }
+        }
+        return buffer.toString();
     }
 }

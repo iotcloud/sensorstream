@@ -49,21 +49,15 @@ public class Utils {
         return findAndReadConfigFile(name, true);
     }
 
-    public static Map readDefaultConfig() {
-        return findAndReadConfigFile("defaults.yaml", true);
-    }
-
     public static Map readStreamConfig() {
-        Map ret = readDefaultConfig();
         String confFile = System.getProperty("stream.conf.file");
-        Map storm;
-        if (confFile==null || confFile.equals("")) {
-            storm = findAndReadConfigFile("ss.yaml", false);
+        Map conf;
+        if (confFile == null || confFile.equals("")) {
+            conf = findAndReadConfigFile("topology.yaml", false);
         } else {
-            storm = findAndReadConfigFile(confFile);
+            conf = findAndReadConfigFile(confFile);
         }
-        ret.putAll(storm);
-        return ret;
+        return conf;
     }
 
     public static String getZkConnectionString(Map conf) {
