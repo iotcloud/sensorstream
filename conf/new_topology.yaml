@@ -1,0 +1,10 @@
+zk.servers: []
+spouts:
+    kinect1:
+        channels: []
+        fields:[]
+        conversion:
+        parallelism:
+    kinect2:
+
+    kinect3:

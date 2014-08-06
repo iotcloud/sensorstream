@@ -12,7 +12,6 @@ import java.io.InputStreamReader;
 import java.util.*;
 
 public abstract class AbstractPerfTopology {
-
     public static TopologyConfiguration parseArgs(String name, Map<String, String> properties) throws FileNotFoundException {
         TopologyConfiguration configuration = new TopologyConfiguration();
 
