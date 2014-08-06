@@ -33,12 +33,13 @@ public class KafkaPerfTopology extends AbstractPerfTopology {
                 List<String> zooServers = getZooServers(zooIps);
 
                 BrokerHosts brokerHosts = new ZkHosts(zkConnectionString(zooServers, zport));
-                SpoutConfig spoutConfig = new SpoutConfig(brokerHosts, iot + "." +  configuration.getRecv(), "", "kafka_spout");
+                SpoutConfig spoutConfig = new SpoutConfig(brokerHosts, iot + "." +  configuration.getRecv(), "", "kafka_spout_" + i);
 
                 spoutConfig.zkServers = zooServers;
                 spoutConfig.zkPort = zport;
                 spoutConfig.scheme = new TimeStampMessageBuilder();
-
+                spoutConfig.forceFromStart = true;
+                spoutConfig.startOffsetTime = -1;
                 KafkaSpout spout = new KafkaSpout(spoutConfig);
                 builder.setSpout("kafka_spout_" + i, spout, configuration.getParallism());
 
