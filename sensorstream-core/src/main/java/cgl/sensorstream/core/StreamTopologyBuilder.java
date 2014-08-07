@@ -4,6 +4,7 @@ import backtype.storm.spout.ISpout;
 import cgl.iotcloud.core.api.thrift.TChannel;
 import cgl.iotcloud.core.utils.SerializationUtils;
 import cgl.sensorstream.core.config.Configuration;
+import cgl.sensorstream.core.rabbitmq.RabbitMQSpoutCreator;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -12,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,7 +26,15 @@ public class StreamTopologyBuilder {
     public static final String CONVERSION = "conversion";
     public static final String PARALLELISM = "parallelism";
 
+    private Map<String, SpoutCreator> spoutCreatorMap = new HashMap<String, SpoutCreator>();
+
+    private Map<String, SpoutCreator> boltCreatorMap = new HashMap<String, SpoutCreator>();
+
     private CuratorFramework curatorFramework;
+
+    public StreamTopologyBuilder() {
+        spoutCreatorMap.put("rabbitmq", new RabbitMQSpoutCreator());
+    }
 
     public StreamComponents buildComponents() {
         StreamComponents components = new StreamComponents();
