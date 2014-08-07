@@ -22,6 +22,8 @@ public class StreamTopologyBuilder {
     public static final String CONVERSION = "conversion";
     public static final String PARALLELISM = "parallelism";
 
+    private CuratorFramework curatorFramework;
+
     public StreamComponents buildComponents() {
         StreamComponents components = new StreamComponents();
 
@@ -29,7 +31,6 @@ public class StreamTopologyBuilder {
 
         String zkServers = Configuration.getZkConnection(conf);
 
-        CuratorFramework curatorFramework = null;
         RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
         curatorFramework = CuratorFrameworkFactory.newClient(zkServers, retryPolicy);
 
@@ -98,7 +99,7 @@ public class StreamTopologyBuilder {
             throw new RuntimeException(msg);
         }
 
-        Object parallel = spoutConf.get(CONVERSION);
+        Object parallel = spoutConf.get(PARALLELISM);
         if (!(parallel instanceof Integer)) {
             String msg = "The parallelism should be a integer";
             LOG.error(msg);
@@ -106,7 +107,9 @@ public class StreamTopologyBuilder {
         }
 
         // get the channels from zoo keeper
+        for (String channel : channels) {
 
+        }
 
         return  null;
     }
