@@ -2,6 +2,7 @@ package cgl.sensorstream.core;
 
 import backtype.storm.spout.ISpout;
 import cgl.iotcloud.core.api.thrift.TChannel;
+import cgl.iotcloud.core.utils.SerializationUtils;
 import cgl.sensorstream.core.config.Configuration;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -54,7 +55,7 @@ public class StreamTopologyBuilder {
                         throw new RuntimeException(msg);
                     }
 
-                    ISpout spout = buildSpout((Map) spoutConf);
+                    ISpout spout = buildSpout(conf, (Map) spoutConf);
                     components.addSpout((String) name, spout);
                 } else {
                     String s = "The spout configuration should be a map";
@@ -68,7 +69,7 @@ public class StreamTopologyBuilder {
         return null;
     }
 
-    private ISpout buildSpout(Map spoutConf) {
+    private ISpout buildSpout(Map conf, Map spoutConf) {
         Object channelsConf = spoutConf.get(CHANNELS);
         List<String> channels = new ArrayList<String>();
         List<String> fields = new ArrayList<String>();
@@ -109,13 +110,32 @@ public class StreamTopologyBuilder {
 
         // get the channels from zoo keeper
         for (String channel : channels) {
-            TChannel tChanel = curatorFramework.getData().forPath()
+            TChannel tChannel = getChannel(channel, conf);
+
+            String transport = tChannel.getTransport();
+
         }
 
         return  null;
     }
 
-    private TChannel getChannel
+    private String getChannelPath(String name, Map conf) {
+        return Configuration.getZkRoot(conf) + "/" + Configuration.getChannelsPath(conf) + "/" + name;
+    }
+
+    private TChannel getChannel(String name, Map conf) {
+        try {
+            byte channelData[] = curatorFramework.getData().forPath(getChannelPath(name, conf));
+
+            TChannel channel = new TChannel();
+            SerializationUtils.createThriftFromBytes(channelData, channel);
+            return channel;
+        } catch (Exception e) {
+            String msg = "Failed to get the data for channel: " + name;
+            LOG.error(msg);
+            throw new RuntimeException(msg);
+        }
+    }
 }
 
 

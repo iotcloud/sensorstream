@@ -1,13 +1,3 @@
-ss.zookeeper.servers:
-    - "localhost"
-ss.zookeeper.port: 2181
-ss.zookeeper.root: "/ss"
-ss.zookeeper.session.timeout: 20000
-ss.zookeeper.connection.timeout: 15000
-ss.zookeeper.retry.times: 5
-ss.zookeeper.retry.interval: 1000
-ss.zookeeper.retry.intervalceiling.millis: 30000
+zk.root: "iot"
+zk.channels.path: "channels"
 
-ss.zookeeper.updates.size: 1000
-
-ss.sensor.updates.size: 1000

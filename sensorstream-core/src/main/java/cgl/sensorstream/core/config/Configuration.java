@@ -20,8 +20,7 @@ public class Configuration {
     // the zookeeper host
     public static final String SS_ZOOKEEPER_SERVERS = "storm.zookeeper.servers";
     
-    public static final String SS_ZOOKEEPER_ROOT = "ss.zookeeper.root";
-    
+
     public static final String SS_ZOOKEEPER_SESSION_TIMEOUT = "ss.zookeeper.session.timeout";
     
     public static final String SS_ZOOKEEPER_CONNECTION_TIMEOUT = "ss.zookeeper.connection.timeout";
@@ -34,10 +33,6 @@ public class Configuration {
 
     public static final String SS_ZOOKEEPER_UPDATES_SIZE = "ss.zookeeper.updates.size";
 
-    public static String getZkRoot(Map conf) {
-        return (String) conf.get(SS_ZOOKEEPER_ROOT);
-    }
-
     public static final String ZK_SERVERS = "zk.servers";
 
     public static String getZkConnection(Map conf) {
@@ -49,5 +44,19 @@ public class Configuration {
             }
         }
         return buffer.toString();
+    }
+
+    public static final String ZK_ROOT = "zk.root";
+
+    public static String getZkRoot(Map conf) {
+        Object o = conf.get(ZK_ROOT);
+        return o.toString();
+    }
+
+    public static final String ZK_CHANNELS_PATH = "zk.channels.path";
+
+    public static String getChannelsPath(Map conf) {
+        Object o = conf.get(ZK_CHANNELS_PATH);
+        return o.toString();
     }
 }
