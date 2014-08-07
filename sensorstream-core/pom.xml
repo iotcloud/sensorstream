@@ -62,5 +62,10 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>iotcloud2</groupId>
+            <artifactId>iotcloud-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 </project>

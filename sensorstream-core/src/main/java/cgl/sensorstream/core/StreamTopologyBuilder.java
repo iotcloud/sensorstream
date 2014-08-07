@@ -1,6 +1,7 @@
 package cgl.sensorstream.core;
 
 import backtype.storm.spout.ISpout;
+import cgl.iotcloud.core.api.thrift.TChannel;
 import cgl.sensorstream.core.config.Configuration;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -108,11 +109,13 @@ public class StreamTopologyBuilder {
 
         // get the channels from zoo keeper
         for (String channel : channels) {
-
+            TChannel tChanel = curatorFramework.getData().forPath()
         }
 
         return  null;
     }
+
+    private TChannel getChannel
 }
 
 
