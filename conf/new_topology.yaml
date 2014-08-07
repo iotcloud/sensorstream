@@ -1,4 +1,4 @@
-zk.servers: []
+zk.servers: ["localhost:2181"]
 spouts:
     kinect1:
         channels: []
@@ -6,7 +6,7 @@ spouts:
         conversion:
         parallelism:
     kinect2:
-
-    kinect3:
-
-    kinect4:
+        channels: []
+        fields:[]
+        conversion:
+        parallelism:
