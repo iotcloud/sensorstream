@@ -2,6 +2,7 @@ package cgl.sensorstream.core;
 
 import backtype.storm.spout.ISpout;
 import cgl.iotcloud.core.api.thrift.TChannel;
+import cgl.iotcloud.core.api.thrift.TDirection;
 import cgl.iotcloud.core.utils.SerializationUtils;
 import cgl.sensorstream.core.config.Configuration;
 import cgl.sensorstream.core.rabbitmq.RabbitMQSpoutCreator;
@@ -122,11 +123,36 @@ public class StreamTopologyBuilder {
         for (String channel : channels) {
             TChannel tChannel = getChannel(channel, conf);
 
-            String transport = tChannel.getTransport();
+            if (tChannel.getDirection() == TDirection.OUT) {
+                String transport = tChannel.getTransport();
+                SpoutCreator creator = spoutCreatorMap.get(transport);
 
+                Object messageBuilder = loadMessageBuilder(conversion.toString());
+                ISpout spout = creator.create(tChannel.getBrokerUrl(), fields, messageBuilder, tChannel.getProperties());
+            }
         }
 
-        return  null;
+        return ;
+    }
+
+    private Object loadMessageBuilder(String path) {
+        try {
+            Class<?> c = Class.forName(path);
+            Object t = c.newInstance();
+            return t;
+        } catch (InstantiationException e) {
+            String msg = "Failed to initialize the class: " + path;
+            LOG.error(msg);
+            throw new RuntimeException(msg, e);
+        } catch (IllegalAccessException e) {
+            String msg = "Failed to access the class: " + path;
+            LOG.error(msg);
+            throw new RuntimeException(msg, e);
+        } catch (ClassNotFoundException e) {
+            String msg = "The class: " + path + " cannot be found";
+            LOG.error(msg);
+            throw new RuntimeException(msg, e);
+        }
     }
 
     private String getChannelPath(String name, Map conf) {

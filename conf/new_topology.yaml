@@ -1,12 +1,11 @@
 zk.servers: ["localhost:2181"]
 spouts:
     kinect1:
-        channels: []
-        fields:[]
-        conversion:
-        parallelism:
+        sensor: ""
+        channel: ""
+        fields: ["", ""]
+        conversion: org.a.a.c
     kinect2:
         channels: []
         fields:[]
         conversion:
-        parallelism:
