@@ -1,6 +1,5 @@
 package cgl.sensorstream.core;
 
-
 import cgl.iotcloud.core.api.thrift.TChannel;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -16,8 +15,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-public class ChannelListener {
-    private Logger LOG = LoggerFactory.getLogger(ChannelListener.class);
+public class SensorListener {
+    private Logger LOG = LoggerFactory.getLogger(SensorListener.class);
 
     private CuratorFramework client = null;
     private PathChildrenCache cache = null;
@@ -25,7 +24,7 @@ public class ChannelListener {
     private String sensorPath = null;
     private String channel = null;
 
-    public ChannelListener(String sensorPath, String channel, String connectionString) {
+    public SensorListener(String sensorPath, String channel, String connectionString) {
         try {
             this.sensorPath = sensorPath;
             this.channel = channel;
@@ -76,13 +75,12 @@ public class ChannelListener {
             for (ChildData data : cache.getCurrentData()) {
                 String path = data.getPath();
 
-
             }
         }
     }
 
     private List<TChannel> getChannels(String sensorId) {
-        return ;
+        return null;
     }
 
     public void close() {
