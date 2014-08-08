@@ -76,7 +76,6 @@ public class StreamTopologyBuilder {
             }
         }
 
-
         return null;
     }
 
@@ -128,11 +127,9 @@ public class StreamTopologyBuilder {
                 SpoutCreator creator = spoutCreatorMap.get(transport);
 
                 Object messageBuilder = loadMessageBuilder(conversion.toString());
-                ISpout spout = creator.create(tChannel.getBrokerUrl(), fields, messageBuilder, tChannel.getProperties());
             }
         }
-
-        return ;
+        return null;
     }
 
     private Object loadMessageBuilder(String path) {
