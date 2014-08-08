@@ -13,12 +13,10 @@ import org.apache.curator.utils.ZKPaths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-public class SensorListener {
-    private Logger LOG = LoggerFactory.getLogger(SensorListener.class);
+public class ChannelListener {
+    private static Logger LOG = LoggerFactory.getLogger(ChannelListener.class);
 
     private CuratorFramework client = null;
     private PathChildrenCache cache = null;
@@ -26,15 +24,10 @@ public class SensorListener {
     private String sensorPath = null;
     private String channel = null;
 
-    private String connectionString = null;
-
-    private Map<String, ChannelListener> channelListeners = new HashMap<String, ChannelListener>();
-
-    public SensorListener(String sensorPath, String channel, String connectionString) {
+    public ChannelListener(String sensorPath, String channel, String connectionString) {
         try {
             this.sensorPath = sensorPath;
             this.channel = channel;
-            this.connectionString = connectionString;
 
             client = CuratorFrameworkFactory.newClient(connectionString, new ExponentialBackoffRetry(1000, 3));
             client.start();
@@ -46,7 +39,6 @@ public class SensorListener {
             LOG.error(msg);
             throw new RuntimeException(msg);
         }
-
     }
 
     private static void addListener(PathChildrenCache cache) {
@@ -80,8 +72,7 @@ public class SensorListener {
             for (ChildData data : cache.getCurrentData()) {
                 String path = data.getPath();
 
-                ChannelListener channelListener = new ChannelListener(path, channel, connectionString);
-                channelListeners.put(path, channelListener);
+
             }
         }
     }
