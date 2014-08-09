@@ -81,7 +81,7 @@ public class SensorListener {
         cache.getListenable().addListener(listener);
     }
 
-    private void stopListener(String channel) {
+    private void stopListener(String path) {
         ChannelListener listener = channelListeners.get(channel);
         listener.stop();
     }
