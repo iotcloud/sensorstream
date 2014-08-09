@@ -46,7 +46,6 @@ public class SensorListener {
             LOG.error(msg);
             throw new RuntimeException(msg);
         }
-
     }
 
     private void addListener(PathChildrenCache cache) {
@@ -56,13 +55,24 @@ public class SensorListener {
             public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
                 switch (event.getType()) {
                     case CHILD_ADDED: {
-                        LOG.info("Node added: " + ZKPaths.getNodeFromPath(event.getData().getPath()));
+                        if (event.getData().getPath().equals(channel)) {
+                            LOG.info("Node added: " + ZKPaths.getNodeFromPath(event.getData().getPath()));
+                            startListener(event.getData().getPath());
+                        }
                         break;
                     } case CHILD_UPDATED: {
+                        if (event.getData().getPath().equals(channel)) {
+                            LOG.info("Node added: " + ZKPaths.getNodeFromPath(event.getData().getPath()));
+                            stopListener(channel);
+                            startListener(event.getData().getPath());
+                        }
                         LOG.info("Node changed: " + ZKPaths.getNodeFromPath(event.getData().getPath()));
                         break;
                     } case CHILD_REMOVED: {
                         LOG.info("Node removed: " + ZKPaths.getNodeFromPath(event.getData().getPath()));
+                        if (event.getData().getPath().equals(channel)) {
+                            stopListener(channel);
+                        }
                         break;
                     }
                 }
@@ -71,22 +81,31 @@ public class SensorListener {
         cache.getListenable().addListener(listener);
     }
 
+    private void stopListener(String channel) {
+        ChannelListener listener = channelListeners.get(channel);
+        listener.stop();
+    }
+
     public void start() {
         if (cache.getCurrentData().size() != 0) {
             for (ChildData data : cache.getCurrentData()) {
                 String path = data.getPath();
-                String channelPath = path + "/" + channel;
-                try {
-                    if (client.checkExists().forPath(channelPath) != null) {
-                        ChannelListener channelListener = new ChannelListener(channelPath, connectionString);
-                        channelListeners.put(path, channelListener);
-                    }
-                } catch (Exception e) {
-                    String msg = "Failed to get the information about channel " + channelPath;
-                    LOG.error(msg);
-                    throw new RuntimeException(msg);
-                }
+                startListener(path);
             }
+        }
+    }
+
+    private void startListener(String path) {
+        String channelPath = path + "/" + channel;
+        try {
+            if (client.checkExists().forPath(channelPath) != null) {
+                ChannelListener channelListener = new ChannelListener(channelPath, connectionString);
+                channelListeners.put(path, channelListener);
+            }
+        } catch (Exception e) {
+            String msg = "Failed to get the information about channel " + channelPath;
+            LOG.error(msg);
+            throw new RuntimeException(msg);
         }
     }
 

@@ -9,7 +9,9 @@ import org.apache.curator.utils.CloseableUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class ChannelListener {
     private static Logger LOG = LoggerFactory.getLogger(ChannelListener.class);
@@ -20,10 +22,13 @@ public class ChannelListener {
 
     private LeaderSelector leaderSelector;
 
+    private final Lock lock = new ReentrantLock();
+
+    private final Condition condition = lock.newCondition();
+
     public ChannelListener(String channelPath, String connectionString) {
         try {
             this.channelPath = channelPath;
-
             client = CuratorFrameworkFactory.newClient(connectionString, new ExponentialBackoffRetry(1000, 3));
             client.start();
         } catch (Exception e) {
@@ -35,6 +40,16 @@ public class ChannelListener {
 
     public void start() {
         leaderSelector = new LeaderSelector(client, channelPath, new ChannelLeaderSelector());
+        leaderSelector.autoRequeue();
+    }
+
+    public void stop() {
+        lock.lock();
+        try {
+            condition.notify();
+        } finally {
+            lock.unlock();
+        }
     }
 
     public void close() {
@@ -45,16 +60,15 @@ public class ChannelListener {
     private class ChannelLeaderSelector extends LeaderSelectorListenerAdapter {
         @Override
         public void takeLeadership(CuratorFramework curatorFramework) throws Exception {
-            // we are now the leader. This method should not return until we want to relinquish leadership
-            final int waitSeconds = (int)(5 * Math.random()) + 1;
-
             LOG.info(channelPath + " os the new leader.");
+            lock.lock();
             try {
-                Thread.sleep(TimeUnit.SECONDS.toMillis(waitSeconds));
+                condition.await();
             } catch (InterruptedException e) {
                 LOG.info(channelPath + " leader was interrupted.");
                 Thread.currentThread().interrupt();
             } finally {
+                lock.unlock();
                 LOG.info(channelPath + " leader relinquishing leadership.\n");
             }
         }
