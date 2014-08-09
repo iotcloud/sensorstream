@@ -1,88 +1,62 @@
 package cgl.sensorstream.core;
 
-import cgl.iotcloud.core.api.thrift.TChannel;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.framework.recipes.cache.ChildData;
-import org.apache.curator.framework.recipes.cache.PathChildrenCache;
-import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
-import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
+import org.apache.curator.framework.recipes.leader.LeaderSelector;
+import org.apache.curator.framework.recipes.leader.LeaderSelectorListenerAdapter;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.utils.CloseableUtils;
-import org.apache.curator.utils.ZKPaths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class ChannelListener {
     private static Logger LOG = LoggerFactory.getLogger(ChannelListener.class);
 
     private CuratorFramework client = null;
-    private PathChildrenCache cache = null;
 
-    private String sensorPath = null;
-    private String channel = null;
+    private String channelPath = null;
 
-    public ChannelListener(String sensorPath, String channel, String connectionString) {
+    private LeaderSelector leaderSelector;
+
+    public ChannelListener(String channelPath, String connectionString) {
         try {
-            this.sensorPath = sensorPath;
-            this.channel = channel;
+            this.channelPath = channelPath;
 
             client = CuratorFrameworkFactory.newClient(connectionString, new ExponentialBackoffRetry(1000, 3));
             client.start();
-
-            cache = new PathChildrenCache(client, sensorPath, true);
-            cache.start();
         } catch (Exception e) {
-            String msg = "Failed to create the listener for ZK path " + sensorPath;
+            String msg = "Failed to create the listener for ZK path " + channelPath;
             LOG.error(msg);
             throw new RuntimeException(msg);
         }
     }
 
-    private static void addListener(PathChildrenCache cache) {
-        // a PathChildrenCacheListener is optional. Here, it's used just to log changes
-        PathChildrenCacheListener listener = new PathChildrenCacheListener() {
-            @Override
-            public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
-                switch (event.getType()) {
-                    case CHILD_ADDED: {
-                        System.out.println("Node added: " + ZKPaths.getNodeFromPath(event.getData().getPath()));
-                        break;
-                    }
-
-                    case CHILD_UPDATED: {
-                        System.out.println("Node changed: " + ZKPaths.getNodeFromPath(event.getData().getPath()));
-                        break;
-                    }
-
-                    case CHILD_REMOVED: {
-                        System.out.println("Node removed: " + ZKPaths.getNodeFromPath(event.getData().getPath()));
-                        break;
-                    }
-                }
-            }
-        };
-        cache.getListenable().addListener(listener);
-    }
-
     public void start() {
-        if (cache.getCurrentData().size() != 0) {
-            for (ChildData data : cache.getCurrentData()) {
-                String path = data.getPath();
-
-
-            }
-        }
-    }
-
-    private List<TChannel> getChannels(String sensorId) {
-        return null;
+        leaderSelector = new LeaderSelector(client, channelPath, new ChannelLeaderSelector());
     }
 
     public void close() {
-        CloseableUtils.closeQuietly(cache);
+        CloseableUtils.closeQuietly(leaderSelector);
         CloseableUtils.closeQuietly(client);
+    }
+
+    private class ChannelLeaderSelector extends LeaderSelectorListenerAdapter {
+        @Override
+        public void takeLeadership(CuratorFramework curatorFramework) throws Exception {
+            // we are now the leader. This method should not return until we want to relinquish leadership
+            final int waitSeconds = (int)(5 * Math.random()) + 1;
+
+            LOG.info(channelPath + " os the new leader.");
+            try {
+                Thread.sleep(TimeUnit.SECONDS.toMillis(waitSeconds));
+            } catch (InterruptedException e) {
+                LOG.info(channelPath + " leader was interrupted.");
+                Thread.currentThread().interrupt();
+            } finally {
+                LOG.info(channelPath + " leader relinquishing leadership.\n");
+            }
+        }
     }
 }
