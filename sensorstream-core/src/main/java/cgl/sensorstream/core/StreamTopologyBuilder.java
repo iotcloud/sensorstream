@@ -3,8 +3,8 @@ package cgl.sensorstream.core;
 import backtype.storm.task.IBolt;
 import backtype.storm.topology.IRichSpout;
 import cgl.sensorstream.core.config.Configuration;
+import cgl.sensorstream.core.rabbitmq.RabbitMQBoltBuilder;
 import cgl.sensorstream.core.rabbitmq.RabbitMQSpoutBuilder;
-import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,13 +28,11 @@ public class StreamTopologyBuilder {
 
     private Map<String, BoltBuilder> boltBuilders = new HashMap<String, BoltBuilder>();
 
-    private CuratorFramework curatorFramework;
-
     private String zkServers;
 
     public StreamTopologyBuilder() {
-        spoutBuilders.put("rabbitMQ", new RabbitMQSpoutBuilder());
-
+        spoutBuilders.put("rabbitmq", new RabbitMQSpoutBuilder());
+        boltBuilders.put("rabbitmq", new RabbitMQBoltBuilder());
     }
 
     public StreamComponents buildComponents() {

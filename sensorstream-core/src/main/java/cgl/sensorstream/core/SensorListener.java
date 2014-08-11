@@ -100,7 +100,7 @@ public class SensorListener {
         String channelPath = path + "/" + channel;
         try {
             if (client.checkExists().forPath(channelPath) != null) {
-                ChannelListener channelListener = new ChannelListener(channelPath, connectionString);
+                ChannelListener channelListener = new ChannelListener(channelPath, connectionString, dstListener);
                 channelListeners.put(path, channelListener);
             }
         } catch (Exception e) {
