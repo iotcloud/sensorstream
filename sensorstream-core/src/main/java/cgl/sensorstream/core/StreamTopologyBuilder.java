@@ -1,6 +1,6 @@
 package cgl.sensorstream.core;
 
-import backtype.storm.task.IBolt;
+import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.IRichSpout;
 import cgl.sensorstream.core.config.Configuration;
 import cgl.sensorstream.core.rabbitmq.RabbitMQBoltBuilder;
@@ -17,6 +17,7 @@ public class StreamTopologyBuilder {
     private static Logger LOG = LoggerFactory.getLogger(StreamTopologyBuilder.class);
 
     public static final String SPOUTS = "spouts";
+    public static final String BOLTS = "bolts";
     public static final String CHANNEL = "channel";
     public static final String FIELDS = "fields";
     public static final String BUILDER = "builder";
@@ -71,7 +72,36 @@ public class StreamTopologyBuilder {
             }
         }
 
-        return null;
+        Map boltsMap = (Map) conf.get(BOLTS);
+        if (boltsMap != null) {
+            for (Object e : boltsMap.entrySet()) {
+                if (e instanceof Map.Entry) {
+                    Object name = ((Map.Entry) e).getKey();
+                    Object spoutConf = ((Map.Entry) e).getValue();
+
+                    if (!(name instanceof String)) {
+                        String msg = "The spout name should be an string";
+                        LOG.error(msg);
+                        throw new RuntimeException(msg);
+                    }
+
+                    if (!(spoutConf instanceof Map)) {
+                        String msg = "The spout configurations should be in a map";
+                        LOG.error(msg);
+                        throw new RuntimeException(msg);
+                    }
+
+                    IRichBolt bolt = buildBolt(conf, (Map) spoutConf);
+                    components.addBolt((String) name, bolt);
+                } else {
+                    String s = "The spout configuration should be a map";
+                    LOG.error(s);
+                    throw new RuntimeException(s);
+                }
+            }
+        }
+
+        return components;
     }
 
     private IRichSpout buildSpout(Map conf, Map spoutConf) {
@@ -102,10 +132,14 @@ public class StreamTopologyBuilder {
         }
 
         Object conversion = spoutConf.get(BUILDER);
-        if (conversion != null && !(conversion instanceof String)) {
-            String msg = "The messageBuilder should specify a message builder implementation";
-            LOG.error(msg);
-            throw new RuntimeException(msg);
+        String messageBuilder = null;
+        if (conversion != null) {
+            if (!(conversion instanceof String)) {
+                String msg = "The messageBuilder should specify a message builder implementation";
+                LOG.error(msg);
+                throw new RuntimeException(msg);
+            }
+            messageBuilder = conversion.toString();
         }
 
         Object broker = spoutConf.get(BROKER);
@@ -129,10 +163,10 @@ public class StreamTopologyBuilder {
             throw new RuntimeException(msg);
         }
 
-        return builder.build(sensorConf.toString(), channelConf.toString(), fields, conversion.toString(), (Map<String, Object>) properties, zkServers);
+        return builder.build(sensorConf.toString(), channelConf.toString(), fields, messageBuilder, (Map<String, Object>) properties, zkServers);
     }
 
-    private IBolt buildBolt(Map conf, Map spoutConf) {
+    private IRichBolt buildBolt(Map conf, Map spoutConf) {
         Object channelConf = spoutConf.get(CHANNEL);
         if (!(channelConf instanceof String)) {
             String msg = "The channels should be a string";
@@ -160,10 +194,14 @@ public class StreamTopologyBuilder {
         }
 
         Object conversion = spoutConf.get(BUILDER);
-        if (conversion != null && !(conversion instanceof String)) {
-            String msg = "The messageBuilder should specify a message builder implementation";
-            LOG.error(msg);
-            throw new RuntimeException(msg);
+        String messageBuilder = null;
+        if (conversion != null) {
+            if (!(conversion instanceof String)) {
+                String msg = "The messageBuilder should specify a message builder implementation";
+                LOG.error(msg);
+                throw new RuntimeException(msg);
+            }
+            messageBuilder = conversion.toString();
         }
 
         Object broker = spoutConf.get(BROKER);
@@ -187,7 +225,7 @@ public class StreamTopologyBuilder {
             throw new RuntimeException(msg);
         }
 
-        return builder.build(sensorConf.toString(), channelConf.toString(), fields, conversion.toString(), (Map<String, Object>) properties, zkServers);
+        return builder.build(sensorConf.toString(), channelConf.toString(), fields, messageBuilder, (Map<String, Object>) properties, zkServers);
     }
 }
 

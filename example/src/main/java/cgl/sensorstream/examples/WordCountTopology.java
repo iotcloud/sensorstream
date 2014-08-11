@@ -21,16 +21,18 @@ public class WordCountTopology {
     public static class SplitSentence extends BaseBasicBolt {
         @Override
         public void declareOutputFields(OutputFieldsDeclarer declarer) {
-            declarer.declare(new Fields("body", "sensorID", "time"));
+            declarer.declare(new Fields("word", "sensorID", "time"));
         }
 
         @Override
         public void execute(Tuple tuple, BasicOutputCollector basicOutputCollector) {
             String sentence = tuple.getString(0);
             String words[] = sentence.split(" ");
+            String sensorId = tuple.getString(1);
+            String time = tuple.getString(2);
             if (words != null) {
                 for (String w : words) {
-                    basicOutputCollector.emit(Arrays.<Object>asList(w));
+                    basicOutputCollector.emit(Arrays.<Object>asList(w, sensorId, time));
                 }
             }
         }
@@ -43,11 +45,14 @@ public class WordCountTopology {
         public void execute(Tuple tuple, BasicOutputCollector collector) {
             String word = tuple.getString(0);
             Integer count = counts.get(word);
+            String sensorId = tuple.getString(1);
+            String time = tuple.getString(2);
             if (count == null)
                 count = 0;
             count++;
             counts.put(word, count);
-            collector.emit(new Values(word, count));
+            String out = word + ":" + count;
+            collector.emit(Arrays.<Object>asList(out.getBytes(), sensorId, time));
         }
 
         @Override
@@ -61,7 +66,6 @@ public class WordCountTopology {
 
         StreamTopologyBuilder streamTopologyBuilder = new StreamTopologyBuilder();
         StreamComponents components = streamTopologyBuilder.buildComponents();
-
         builder.setSpout("spout", components.getSpouts().get("sentence_receive"), 5);
         builder.setBolt("split", new SplitSentence(), 8).shuffleGrouping("spout");
         builder.setBolt("count", new WordCount(), 12).fieldsGrouping("split", new Fields("word"));
@@ -77,7 +81,7 @@ public class WordCountTopology {
             conf.setMaxTaskParallelism(3);
             LocalCluster cluster = new LocalCluster();
             cluster.submitTopology("word-count", conf, builder.createTopology());
-            Thread.sleep(10000);
+            Thread.sleep(1000000);
             cluster.shutdown();
         }
     }

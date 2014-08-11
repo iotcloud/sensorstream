@@ -13,3 +13,5 @@ bolts:
         sensor: "wordcount"
         channel: "count"
         fields: ["count", "sensorID", "time"]
+        properties:
+          ackMode: "auto"

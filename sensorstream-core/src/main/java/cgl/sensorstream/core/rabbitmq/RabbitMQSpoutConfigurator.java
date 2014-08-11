@@ -8,6 +8,7 @@ import com.ss.commons.DestinationChanger;
 import com.ss.commons.MessageBuilder;
 import com.ss.commons.SpoutConfigurator;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -56,7 +57,7 @@ public class RabbitMQSpoutConfigurator implements SpoutConfigurator {
 
     @Override
     public Map<String, String> getProperties() {
-        return null;
+        return new HashMap<String, String>();
     }
 
     @Override
