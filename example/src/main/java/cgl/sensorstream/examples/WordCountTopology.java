@@ -9,7 +9,6 @@ import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.topology.base.BaseBasicBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
-import backtype.storm.tuple.Values;
 import cgl.sensorstream.core.StreamComponents;
 import cgl.sensorstream.core.StreamTopologyBuilder;
 
@@ -66,7 +65,7 @@ public class WordCountTopology {
 
         StreamTopologyBuilder streamTopologyBuilder = new StreamTopologyBuilder();
         StreamComponents components = streamTopologyBuilder.buildComponents();
-        builder.setSpout("spout", components.getSpouts().get("sentence_receive"), 5);
+        builder.setSpout("spout", components.getSpouts().get("sentence_receive"), 1);
         builder.setBolt("split", new SplitSentence(), 8).shuffleGrouping("spout");
         builder.setBolt("count", new WordCount(), 12).fieldsGrouping("split", new Fields("word"));
         builder.setBolt("sender", components.getBolts().get("count_send")).shuffleGrouping("count");

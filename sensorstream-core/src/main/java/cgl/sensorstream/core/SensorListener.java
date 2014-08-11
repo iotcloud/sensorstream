@@ -30,7 +30,9 @@ public class SensorListener {
 
     private DestinationChangeListener dstListener;
 
-    public SensorListener(String sensorPath, String channel, String connectionString, DestinationChangeListener listener) {
+    private String root = "/iot/local/sensors";
+
+    public SensorListener(String sensor, String channel, String connectionString, DestinationChangeListener listener) {
         try {
             this.channel = channel;
             this.connectionString = connectionString;
@@ -39,11 +41,11 @@ public class SensorListener {
             client = CuratorFrameworkFactory.newClient(connectionString, new ExponentialBackoffRetry(1000, 3));
             client.start();
 
-            cache = new PathChildrenCache(client, sensorPath, true);
+            cache = new PathChildrenCache(client, root + "/" + sensor, true);
             cache.start();
             addListener(cache);
         } catch (Exception e) {
-            String msg = "Failed to create the listener for ZK path " + sensorPath;
+            String msg = "Failed to create the listener for ZK path " + sensor;
             LOG.error(msg);
             throw new RuntimeException(msg);
         }
