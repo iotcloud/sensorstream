@@ -25,10 +25,10 @@ public class WordCountTopology {
 
         @Override
         public void execute(Tuple tuple, BasicOutputCollector basicOutputCollector) {
-            String sentence = tuple.getString(0);
+            String sentence = new String((byte [])tuple.getValue(0));
             String words[] = sentence.split(" ");
-            String sensorId = tuple.getString(1);
-            String time = tuple.getString(2);
+            Object sensorId = tuple.getValue(1);
+            Object time = tuple.getValue(2);
             if (words != null) {
                 for (String w : words) {
                     basicOutputCollector.emit(Arrays.<Object>asList(w, sensorId, time));
@@ -44,8 +44,8 @@ public class WordCountTopology {
         public void execute(Tuple tuple, BasicOutputCollector collector) {
             String word = tuple.getString(0);
             Integer count = counts.get(word);
-            String sensorId = tuple.getString(1);
-            String time = tuple.getString(2);
+            Object sensorId = tuple.getValue(1);
+            Object time = tuple.getString(2);
             if (count == null)
                 count = 0;
             count++;

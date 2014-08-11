@@ -91,7 +91,7 @@ public class Utils {
     }
 
     public static DestinationConfiguration convertChannelToDestination(TChannel channel) {
-        DestinationConfiguration destinationConfiguration = new DestinationConfiguration(channel.getName(), channel.getBrokerUrl());
+        DestinationConfiguration destinationConfiguration = new DestinationConfiguration(channel.getName(), channel.getBrokerUrl(), channel.getSite(), channel.getSensor());
         if (channel.getProperties() != null) {
             for (Map.Entry<String, String> entry : channel.getProperties().entrySet()) {
                 destinationConfiguration.addProperty(entry.getKey(), entry.getValue());

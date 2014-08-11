@@ -38,6 +38,8 @@ public class DefaultRabbitMQMessageBuilder implements MessageBuilder {
                 }
                 if (time !=  null) {
                     tuples.add(time);
+                } else {
+                    tuples.add(Long.toString(System.currentTimeMillis()));
                 }
             }
         }
@@ -47,7 +49,7 @@ public class DefaultRabbitMQMessageBuilder implements MessageBuilder {
     @Override
     public Object serialize(Tuple tuple, Object o) {
         byte []body = (byte[]) tuple.getValueByField("body");
-        String sensorId = (String) tuple.getValueByField(TransportConstants.SENSOR_ID);
+        Object sensorId = tuple.getValueByField(TransportConstants.SENSOR_ID);
         String time = (String) tuple.getValueByField("time");
         Map<String, Object> props = new HashMap<String, Object>();
         props.put(TransportConstants.SENSOR_ID, sensorId);

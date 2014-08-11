@@ -2,6 +2,7 @@ package cgl.sensorstream.core.rabbitmq;
 
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
+import backtype.storm.tuple.Tuple;
 import cgl.sensorstream.core.Utils;
 import cgl.sensorstream.core.ZKDestinationChanger;
 import com.ss.commons.BoltConfigurator;
@@ -42,7 +43,11 @@ public class RabbitMQBoltConfigurator implements BoltConfigurator {
 
     @Override
     public MessageBuilder getMessageBuilder() {
-        return (MessageBuilder) Utils.loadMessageBuilder(messageBuilder);
+        if (messageBuilder != null) {
+            return (MessageBuilder) Utils.loadMessageBuilder(messageBuilder);
+        } else {
+            return new DefaultRabbitMQMessageBuilder();
+        }
     }
 
     @Override
@@ -62,7 +67,12 @@ public class RabbitMQBoltConfigurator implements BoltConfigurator {
 
     @Override
     public DestinationSelector getDestinationSelector() {
-        return null;
+        return new DestinationSelector() {
+            @Override
+            public String select(Tuple tuple) {
+                return "count";
+            }
+        };
     }
 
     @Override
