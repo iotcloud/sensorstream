@@ -21,7 +21,7 @@ public class WordCountTopology {
     public static class SplitSentence extends BaseBasicBolt {
         @Override
         public void declareOutputFields(OutputFieldsDeclarer declarer) {
-            declarer.declare(new Fields("word"));
+            declarer.declare(new Fields("body", "sensorID", "time"));
         }
 
         @Override
@@ -52,7 +52,7 @@ public class WordCountTopology {
 
         @Override
         public void declareOutputFields(OutputFieldsDeclarer declarer) {
-            declarer.declare(new Fields("word", "count"));
+            declarer.declare(new Fields("body", "sensorID", "time"));
         }
     }
 
@@ -62,10 +62,10 @@ public class WordCountTopology {
         StreamTopologyBuilder streamTopologyBuilder = new StreamTopologyBuilder();
         StreamComponents components = streamTopologyBuilder.buildComponents();
 
-        builder.setSpout("spout", components.getSpouts().get("sentence"), 5);
+        builder.setSpout("spout", components.getSpouts().get("sentence_receive"), 5);
         builder.setBolt("split", new SplitSentence(), 8).shuffleGrouping("spout");
         builder.setBolt("count", new WordCount(), 12).fieldsGrouping("split", new Fields("word"));
-
+        builder.setBolt("sender", components.getBolts().get("count_send")).shuffleGrouping("count");
 
         Config conf = new Config();
         conf.setDebug(true);
@@ -73,8 +73,7 @@ public class WordCountTopology {
         if (args != null && args.length > 0) {
             conf.setNumWorkers(3);
             StormSubmitter.submitTopology(args[0], conf, builder.createTopology());
-        }
-        else {
+        } else {
             conf.setMaxTaskParallelism(3);
             LocalCluster cluster = new LocalCluster();
             cluster.submitTopology("word-count", conf, builder.createTopology());
