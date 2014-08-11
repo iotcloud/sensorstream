@@ -1,6 +1,6 @@
 package cgl.sensorstream.core;
 
-import cgl.iotcloud.core.api.thrift.TChannel;
+import com.ss.commons.DestinationChangeListener;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class SensorListener {
@@ -23,24 +22,26 @@ public class SensorListener {
     private CuratorFramework client = null;
     private PathChildrenCache cache = null;
 
-    private String sensorPath = null;
     private String channel = null;
 
     private String connectionString = null;
 
     private Map<String, ChannelListener> channelListeners = new HashMap<String, ChannelListener>();
 
-    public SensorListener(String sensorPath, String channel, String connectionString) {
+    private DestinationChangeListener dstListener;
+
+    public SensorListener(String sensorPath, String channel, String connectionString, DestinationChangeListener listener) {
         try {
-            this.sensorPath = sensorPath;
             this.channel = channel;
             this.connectionString = connectionString;
+            this.dstListener = listener;
 
             client = CuratorFrameworkFactory.newClient(connectionString, new ExponentialBackoffRetry(1000, 3));
             client.start();
 
             cache = new PathChildrenCache(client, sensorPath, true);
             cache.start();
+            addListener(cache);
         } catch (Exception e) {
             String msg = "Failed to create the listener for ZK path " + sensorPath;
             LOG.error(msg);
@@ -63,7 +64,7 @@ public class SensorListener {
                     } case CHILD_UPDATED: {
                         if (event.getData().getPath().equals(channel)) {
                             LOG.info("Node added: " + ZKPaths.getNodeFromPath(event.getData().getPath()));
-                            stopListener(channel);
+                            stopListener();
                             startListener(event.getData().getPath());
                         }
                         LOG.info("Node changed: " + ZKPaths.getNodeFromPath(event.getData().getPath()));
@@ -71,7 +72,7 @@ public class SensorListener {
                     } case CHILD_REMOVED: {
                         LOG.info("Node removed: " + ZKPaths.getNodeFromPath(event.getData().getPath()));
                         if (event.getData().getPath().equals(channel)) {
-                            stopListener(channel);
+                            stopListener();
                         }
                         break;
                     }
@@ -81,7 +82,7 @@ public class SensorListener {
         cache.getListenable().addListener(listener);
     }
 
-    private void stopListener(String path) {
+    private void stopListener() {
         ChannelListener listener = channelListeners.get(channel);
         listener.stop();
     }
@@ -107,10 +108,6 @@ public class SensorListener {
             LOG.error(msg);
             throw new RuntimeException(msg);
         }
-    }
-
-    private List<TChannel> getChannels(String sensorId) {
-        return null;
     }
 
     public void close() {

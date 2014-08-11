@@ -1,6 +1,8 @@
 package cgl.sensorstream.core;
 
+import cgl.iotcloud.core.api.thrift.TChannel;
 import cgl.sensorstream.core.config.Configuration;
+import com.ss.commons.DestinationConfiguration;
 import org.ho.yaml.Yaml;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,6 +88,16 @@ public class Utils {
             LOG.error(msg);
             throw new RuntimeException(msg, e);
         }
+    }
+
+    public static DestinationConfiguration convertChannelToDestination(TChannel channel) {
+        DestinationConfiguration destinationConfiguration = new DestinationConfiguration(channel.getName(), channel.getBrokerUrl());
+        if (channel.getProperties() != null) {
+            for (Map.Entry<String, String> entry : channel.getProperties().entrySet()) {
+                destinationConfiguration.addProperty(entry.getKey(), entry.getValue());
+            }
+        }
+        return destinationConfiguration;
     }
 
 }

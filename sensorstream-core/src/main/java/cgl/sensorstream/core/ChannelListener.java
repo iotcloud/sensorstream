@@ -2,6 +2,7 @@ package cgl.sensorstream.core;
 
 import cgl.iotcloud.core.api.thrift.TChannel;
 import cgl.iotcloud.core.utils.SerializationUtils;
+import com.ss.commons.DestinationChangeListener;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.leader.LeaderSelector;
@@ -28,9 +29,12 @@ public class ChannelListener {
 
     private final Condition condition = lock.newCondition();
 
-    public ChannelListener(String channelPath, String connectionString) {
+    private DestinationChangeListener dstListener;
+
+    public ChannelListener(String channelPath, String connectionString, DestinationChangeListener dstListener) {
         try {
             this.channelPath = channelPath;
+            this.dstListener = dstListener;
             client = CuratorFrameworkFactory.newClient(connectionString, new ExponentialBackoffRetry(1000, 3));
             client.start();
         } catch (Exception e) {
@@ -68,8 +72,13 @@ public class ChannelListener {
                 byte data[] = curatorFramework.getData().forPath(channelPath);
                 TChannel channel = new TChannel();
                 SerializationUtils.createThriftFromBytes(data, channel);
-
+                if (dstListener != null) {
+                    dstListener.addDestination(channel.getName(), Utils.convertChannelToDestination(channel));
+                }
                 condition.await();
+                if (dstListener != null) {
+                    dstListener.removeDestination(channel.getName());
+                }
             } catch (InterruptedException e) {
                 LOG.info(channelPath + " leader was interrupted.");
                 Thread.currentThread().interrupt();
