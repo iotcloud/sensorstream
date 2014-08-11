@@ -2,97 +2,71 @@ package cgl.sensorstream.core.rabbitmq;
 
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
-import backtype.storm.tuple.Tuple;
-import com.ss.rabbitmq.MessageBuilder;
-import com.ss.rabbitmq.RabbitMQConfigurator;
-import com.ss.rabbitmq.RabbitMQDestination;
-import com.ss.rabbitmq.RabbitMQDestinationSelector;
+import cgl.sensorstream.core.Utils;
+import cgl.sensorstream.core.ZKDestinationChanger;
+import com.ss.commons.BoltConfigurator;
+import com.ss.commons.DestinationChanger;
+import com.ss.commons.DestinationSelector;
+import com.ss.commons.MessageBuilder;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public class RabbitMQBoltConfigurator implements RabbitMQConfigurator {
-    private String url;
+public class RabbitMQBoltConfigurator implements BoltConfigurator {
+    private int queueSize = 64;
 
-    private List<RabbitMQDestination> destinations = new ArrayList<RabbitMQDestination>();
+    private String messageBuilder;
 
-    private MessageBuilder messageBuilder;
+    private List<String> fields;
 
-    private List<String> outFields = new ArrayList<String>();
+    private String sensor;
 
-    private RabbitMQDestinationSelector destinationSelector = null;
+    private String channel;
 
-    public RabbitMQBoltConfigurator(String url, List<RabbitMQDestination> destinations, MessageBuilder messageBuilder, List<String> outFields) {
-        this.url = url;
-        this.destinations = destinations;
+    private String zkConnectionString;
+
+    public RabbitMQBoltConfigurator(String sensor,
+                                    String channel,
+                                    String messageBuilder,
+                                    List<String> fields,
+                                    int queueSize,
+                                    String zkConnectionString) {
+        this.sensor = sensor;
+        this.channel = channel;
         this.messageBuilder = messageBuilder;
-        this.outFields = outFields;
-    }
-
-    public void setDestinationSelector(RabbitMQDestinationSelector destinationSelector) {
-        this.destinationSelector = destinationSelector;
-    }
-
-    @Override
-    public String getURL() {
-        return this.url;
-    }
-
-    @Override
-    public boolean isAutoAcking() {
-        return true;
-    }
-
-    @Override
-    public int getPrefetchCount() {
-        return 0;
-    }
-
-    @Override
-    public boolean isReQueueOnFail() {
-        return false;
-    }
-
-    @Override
-    public String getConsumerTag() {
-        return null;
-    }
-
-    @Override
-    public List<RabbitMQDestination> getQueueName() {
-        return destinations;
+        this.fields = fields;
+        this.queueSize = queueSize;
+        this.zkConnectionString = zkConnectionString;
     }
 
     @Override
     public MessageBuilder getMessageBuilder() {
-        return this.messageBuilder;
+        return (MessageBuilder) Utils.loadMessageBuilder(messageBuilder);
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields(this.outFields));
+        outputFieldsDeclarer.declare(new Fields(fields));
     }
 
     @Override
     public int queueSize() {
-        return 64;
+        return queueSize;
     }
 
     @Override
-    public RabbitMQDestinationSelector getDestinationSelector() {
-        if (destinationSelector == null) {
-            return new RabbitMQDestinationSelector() {
-                @Override
-                public String select(Tuple tuple) {
-                    String destination = (String) tuple.getValueByField("destination");
-                    if (destination == null) {
-                        throw new RuntimeException("The destination should be present in the tuple");
-                    }
-                    return destination;
-                }
-            };
-        } else {
-            return this.destinationSelector;
-        }
+    public Map<String, String> getProperties() {
+        return new HashMap<String, String>();
+    }
+
+    @Override
+    public DestinationSelector getDestinationSelector() {
+        return null;
+    }
+
+    @Override
+    public DestinationChanger getDestinationChanger() {
+        return new ZKDestinationChanger(sensor, channel, zkConnectionString);
     }
 }

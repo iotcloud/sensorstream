@@ -1,11 +1,9 @@
 package cgl.sensorstream.core;
 
 import backtype.storm.spout.ISpout;
-import cgl.iotcloud.core.api.thrift.TChannel;
-import cgl.iotcloud.core.api.thrift.TDirection;
-import cgl.iotcloud.core.utils.SerializationUtils;
+import backtype.storm.task.IBolt;
 import cgl.sensorstream.core.config.Configuration;
-import cgl.sensorstream.core.rabbitmq.RabbitMQSpoutCreator;
+import cgl.sensorstream.core.rabbitmq.RabbitMQSpoutBuilder;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -22,19 +20,24 @@ public class StreamTopologyBuilder {
     private static Logger LOG = LoggerFactory.getLogger(StreamTopologyBuilder.class);
 
     public static final String SPOUTS = "spouts";
-    public static final String CHANNELS = "channels";
+    public static final String CHANNEL = "channel";
     public static final String FIELDS = "fields";
-    public static final String CONVERSION = "conversion";
-    public static final String PARALLELISM = "parallelism";
+    public static final String BUILDER = "builder";
+    public static final String BROKER = "broker";
+    public static final String SENSOR = "sensor";
+    public static final String PROPERTIES = "properties";
 
-    private Map<String, SpoutCreator> spoutCreatorMap = new HashMap<String, SpoutCreator>();
+    private Map<String, SpoutBuilder> spoutBuilders = new HashMap<String, SpoutBuilder>();
 
-    private Map<String, SpoutCreator> boltCreatorMap = new HashMap<String, SpoutCreator>();
+    private Map<String, BoltBuilder> boltBuilders = new HashMap<String, BoltBuilder>();
 
     private CuratorFramework curatorFramework;
 
+    private String zkServers;
+
     public StreamTopologyBuilder() {
-        spoutCreatorMap.put("rabbitmq", new RabbitMQSpoutCreator());
+        spoutBuilders.put("rabbitMQ", new RabbitMQSpoutBuilder());
+
     }
 
     public StreamComponents buildComponents() {
@@ -42,10 +45,7 @@ public class StreamTopologyBuilder {
 
         Map conf = Utils.readStreamConfig();
 
-        String zkServers = Configuration.getZkConnection(conf);
-
-        RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
-        curatorFramework = CuratorFrameworkFactory.newClient(zkServers, retryPolicy);
+        zkServers = Configuration.getZkConnection(conf);
 
         Map spoutsMap = (Map) conf.get(SPOUTS);
         if (spoutsMap != null) {
@@ -80,95 +80,122 @@ public class StreamTopologyBuilder {
     }
 
     private ISpout buildSpout(Map conf, Map spoutConf) {
-        Object channelsConf = spoutConf.get(CHANNELS);
-        List<String> channels = new ArrayList<String>();
-        List<String> fields = new ArrayList<String>();
-        if (!(channelsConf instanceof List)) {
-            String msg = "The channels should be a list";
+        Object channelConf = spoutConf.get(CHANNEL);
+        if (!(channelConf instanceof String)) {
+            String msg = "The channels should be a string";
             LOG.error(msg);
             throw new RuntimeException(msg);
         }
 
-        for (Object o : (List)channelsConf) {
-            channels.add(o.toString());
+        Object sensorConf = spoutConf.get(SENSOR);
+        if (!(sensorConf instanceof String)) {
+            String msg = "The sensor should be a string";
+            LOG.error(msg);
+            throw new RuntimeException(msg);
         }
 
         Object filedsConf = spoutConf.get(FIELDS);
         if (!(filedsConf instanceof List)) {
-            String msg = "The fields should be a list";
+            String msg = "The fields should be a string list";
             LOG.error(msg);
             throw new RuntimeException(msg);
         }
 
+        List<String> fields = new ArrayList<String>();
         for (Object o : (List)filedsConf) {
             fields.add(o.toString());
         }
 
-        Object conversion = spoutConf.get(CONVERSION);
+        Object conversion = spoutConf.get(BUILDER);
         if (!(conversion instanceof String)) {
+            String msg = "The messageBuilder should specify a message builder implementation";
+            LOG.error(msg);
+            throw new RuntimeException(msg);
+        }
+
+        Object broker = spoutConf.get(BROKER);
+        if (!(broker instanceof String)) {
             String msg = "The conversion should specify a message converter";
             LOG.error(msg);
             throw new RuntimeException(msg);
         }
 
-        Object parallel = spoutConf.get(PARALLELISM);
-        if (!(parallel instanceof Integer)) {
-            String msg = "The parallelism should be a integer";
+        Object properties = spoutConf.get(PROPERTIES);
+        if (properties != null && !(properties instanceof Map)) {
+            String msg = "The properties should be a map";
             LOG.error(msg);
             throw new RuntimeException(msg);
         }
 
-        // get the channels from zoo keeper
-        for (String channel : channels) {
-            TChannel tChannel = getChannel(channel, conf);
-
-            if (tChannel.getDirection() == TDirection.OUT) {
-                String transport = tChannel.getTransport();
-                SpoutCreator creator = spoutCreatorMap.get(transport);
-
-                Object messageBuilder = loadMessageBuilder(conversion.toString());
-            }
-        }
-        return null;
-    }
-
-    private Object loadMessageBuilder(String path) {
-        try {
-            Class<?> c = Class.forName(path);
-            Object t = c.newInstance();
-            return t;
-        } catch (InstantiationException e) {
-            String msg = "Failed to initialize the class: " + path;
-            LOG.error(msg);
-            throw new RuntimeException(msg, e);
-        } catch (IllegalAccessException e) {
-            String msg = "Failed to access the class: " + path;
-            LOG.error(msg);
-            throw new RuntimeException(msg, e);
-        } catch (ClassNotFoundException e) {
-            String msg = "The class: " + path + " cannot be found";
-            LOG.error(msg);
-            throw new RuntimeException(msg, e);
-        }
-    }
-
-    private String getChannelPath(String name, Map conf) {
-        return Configuration.getZkRoot(conf) + "/" + Configuration.getChannelsPath(conf) + "/" + name;
-    }
-
-    private TChannel getChannel(String name, Map conf) {
-        try {
-            byte channelData[] = curatorFramework.getData().forPath(getChannelPath(name, conf));
-
-            TChannel channel = new TChannel();
-            SerializationUtils.createThriftFromBytes(channelData, channel);
-            return channel;
-        } catch (Exception e) {
-            String msg = "Failed to get the data for channel: " + name;
+        SpoutBuilder builder = spoutBuilders.get(broker.toString());
+        if (builder == null) {
+            String msg = "Cannot build a spout of type: " + broker;
             LOG.error(msg);
             throw new RuntimeException(msg);
         }
+
+        return builder.build(sensorConf.toString(), channelConf.toString(), fields, conversion.toString(), (Map<String, Object>) properties, zkServers);
     }
+
+    private IBolt buildBolt(Map conf, Map spoutConf) {
+        Object channelConf = spoutConf.get(CHANNEL);
+        if (!(channelConf instanceof String)) {
+            String msg = "The channels should be a string";
+            LOG.error(msg);
+            throw new RuntimeException(msg);
+        }
+
+        Object sensorConf = spoutConf.get(SENSOR);
+        if (!(sensorConf instanceof String)) {
+            String msg = "The sensor should be a string";
+            LOG.error(msg);
+            throw new RuntimeException(msg);
+        }
+
+        Object filedsConf = spoutConf.get(FIELDS);
+        if (!(filedsConf instanceof List)) {
+            String msg = "The fields should be a string list";
+            LOG.error(msg);
+            throw new RuntimeException(msg);
+        }
+
+        List<String> fields = new ArrayList<String>();
+        for (Object o : (List)filedsConf) {
+            fields.add(o.toString());
+        }
+
+        Object conversion = spoutConf.get(BUILDER);
+        if (!(conversion instanceof String)) {
+            String msg = "The messageBuilder should specify a message builder implementation";
+            LOG.error(msg);
+            throw new RuntimeException(msg);
+        }
+
+        Object broker = spoutConf.get(BROKER);
+        if (!(broker instanceof String)) {
+            String msg = "The conversion should specify a message converter";
+            LOG.error(msg);
+            throw new RuntimeException(msg);
+        }
+
+        Object properties = spoutConf.get(PROPERTIES);
+        if (properties != null && !(properties instanceof Map)) {
+            String msg = "The properties should be a map";
+            LOG.error(msg);
+            throw new RuntimeException(msg);
+        }
+
+        BoltBuilder builder = boltBuilders.get(broker.toString());
+        if (builder == null) {
+            String msg = "Cannot build a spout of type: " + broker;
+            LOG.error(msg);
+            throw new RuntimeException(msg);
+        }
+
+        return builder.build(sensorConf.toString(), channelConf.toString(), fields, conversion.toString(), (Map<String, Object>) properties, zkServers);
+    }
+
+
 }
 
 

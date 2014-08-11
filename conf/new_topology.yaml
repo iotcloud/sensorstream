@@ -1,11 +1,27 @@
 zk.servers: ["localhost:2181"]
 spouts:
     kinect1:
+        broker: "rabbitMQ"
         sensor: ""
         channel: ""
         fields: ["", ""]
-        conversion: org.a.a.c
+        messageBuilder:
+        properties:
+          ackMode: "auto"
     kinect2:
-        channels: []
-        fields:[]
-        conversion:
+        broker: "rabbitMQ"
+        sensor: ""
+        channel: ""
+        fields: ["", ""]
+        messageBuilder:
+        properties:
+          ackMode: "auto"
+bolts:
+    command:
+        broker: "rabbitMQ"
+        sensor:
+        channel:
+        fields: ["", ""]
+        messageBuilder:
+
+
