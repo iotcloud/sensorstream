@@ -1,13 +1,10 @@
 package cgl.sensorstream.core;
 
-import backtype.storm.spout.ISpout;
 import backtype.storm.task.IBolt;
+import backtype.storm.topology.IRichSpout;
 import cgl.sensorstream.core.config.Configuration;
 import cgl.sensorstream.core.rabbitmq.RabbitMQSpoutBuilder;
-import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +63,7 @@ public class StreamTopologyBuilder {
                         throw new RuntimeException(msg);
                     }
 
-                    ISpout spout = buildSpout(conf, (Map) spoutConf);
+                    IRichSpout spout = buildSpout(conf, (Map) spoutConf);
                     components.addSpout((String) name, spout);
                 } else {
                     String s = "The spout configuration should be a map";
@@ -79,7 +76,7 @@ public class StreamTopologyBuilder {
         return null;
     }
 
-    private ISpout buildSpout(Map conf, Map spoutConf) {
+    private IRichSpout buildSpout(Map conf, Map spoutConf) {
         Object channelConf = spoutConf.get(CHANNEL);
         if (!(channelConf instanceof String)) {
             String msg = "The channels should be a string";
@@ -107,7 +104,7 @@ public class StreamTopologyBuilder {
         }
 
         Object conversion = spoutConf.get(BUILDER);
-        if (!(conversion instanceof String)) {
+        if (conversion != null && !(conversion instanceof String)) {
             String msg = "The messageBuilder should specify a message builder implementation";
             LOG.error(msg);
             throw new RuntimeException(msg);
@@ -165,7 +162,7 @@ public class StreamTopologyBuilder {
         }
 
         Object conversion = spoutConf.get(BUILDER);
-        if (!(conversion instanceof String)) {
+        if (conversion != null && !(conversion instanceof String)) {
             String msg = "The messageBuilder should specify a message builder implementation";
             LOG.error(msg);
             throw new RuntimeException(msg);
@@ -194,8 +191,6 @@ public class StreamTopologyBuilder {
 
         return builder.build(sensorConf.toString(), channelConf.toString(), fields, conversion.toString(), (Map<String, Object>) properties, zkServers);
     }
-
-
 }
 
 

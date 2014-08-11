@@ -24,7 +24,9 @@ public class RabbitMQSpoutConfigurator implements SpoutConfigurator {
 
     private String zkConnectionString;
 
-    public RabbitMQSpoutConfigurator(String sensor, String channel, List<String> fields, String messageBuilder, int queueSize, String zkConnectionString) {
+    public RabbitMQSpoutConfigurator(String sensor, String channel,
+                                     List<String> fields, String messageBuilder,
+                                     int queueSize, String zkConnectionString) {
         this.sensor = sensor;
         this.channel = channel;
         this.messageBuilder = messageBuilder;
@@ -35,7 +37,11 @@ public class RabbitMQSpoutConfigurator implements SpoutConfigurator {
 
     @Override
     public MessageBuilder getMessageBuilder() {
-        return (MessageBuilder) Utils.loadMessageBuilder(messageBuilder);
+        if (messageBuilder != null) {
+            return (MessageBuilder) Utils.loadMessageBuilder(messageBuilder);
+        } else {
+            return new DefaultRabbitMQMessageBuilder();
+        }
     }
 
     @Override

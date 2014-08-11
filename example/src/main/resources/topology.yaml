@@ -1,0 +1,16 @@
+zk.servers: ["localhost:2181"]
+spouts:
+    sentence:
+        broker: "rabbitmq"
+        sensor: "wordcount"
+        channel: "sentence"
+        fields: ["sentence", "sensorId", "time"]
+        properties:
+          ackMode: "auto"
+bolts:
+    command:
+        broker: "rabbitmq"
+        sensor: "wordcount"
+        channel: "count"
+        fields: ["count", "sensorId", "time"]
+        messageBuilder:

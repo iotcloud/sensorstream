@@ -1,29 +1,29 @@
 package cgl.sensorstream.core;
 
-import backtype.storm.spout.ISpout;
-import backtype.storm.task.IBolt;
+import backtype.storm.topology.IRichBolt;
+import backtype.storm.topology.IRichSpout;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class StreamComponents {
-    private Map<String, ISpout> spouts = new HashMap<String, ISpout>();
+    private Map<String, IRichSpout> spouts = new HashMap<String, IRichSpout>();
 
-    private Map<String, IBolt> bolts = new HashMap<String, IBolt>();
+    private Map<String, IRichBolt> bolts = new HashMap<String, IRichBolt>();
 
-    public void addSpout(String name, ISpout spout) {
+    public void addSpout(String name, IRichSpout spout) {
         spouts.put(name, spout);
     }
 
-    public void addBolt(String name, IBolt bolt) {
+    public void addBolt(String name, IRichBolt bolt) {
         bolts.put(name, bolt);
     }
 
-    public Map<String, ISpout> getSpouts() {
+    public Map<String, IRichSpout> getSpouts() {
         return spouts;
     }
 
-    public Map<String, IBolt> getBolts() {
+    public Map<String, IRichBolt> getBolts() {
         return bolts;
     }
 }
