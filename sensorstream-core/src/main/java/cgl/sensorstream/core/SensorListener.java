@@ -42,7 +42,7 @@ public class SensorListener {
             client.start();
 
             cache = new PathChildrenCache(client, root + "/" + sensor, true);
-            cache.start();
+            cache.start(PathChildrenCache.StartMode.BUILD_INITIAL_CACHE);
             addListener(cache);
         } catch (Exception e) {
             String msg = "Failed to create the listener for ZK path " + sensor;
@@ -103,6 +103,7 @@ public class SensorListener {
         try {
             if (client.checkExists().forPath(channelPath) != null) {
                 ChannelListener channelListener = new ChannelListener(channelPath, connectionString, dstListener);
+                channelListener.start();
                 channelListeners.put(path, channelListener);
             }
         } catch (Exception e) {

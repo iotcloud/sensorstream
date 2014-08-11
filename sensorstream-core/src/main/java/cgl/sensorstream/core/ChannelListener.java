@@ -46,12 +46,14 @@ public class ChannelListener {
 
     public void start() {
         leaderSelector = new LeaderSelector(client, channelPath, new ChannelLeaderSelector());
+        leaderSelector.start();
         leaderSelector.autoRequeue();
     }
 
     public void stop() {
         lock.lock();
         try {
+            leaderSelector.close();
             condition.notify();
         } finally {
             lock.unlock();
@@ -66,7 +68,7 @@ public class ChannelListener {
     private class ChannelLeaderSelector extends LeaderSelectorListenerAdapter {
         @Override
         public void takeLeadership(CuratorFramework curatorFramework) throws Exception {
-            LOG.info(channelPath + " os the new leader.");
+            LOG.info(channelPath + " is the new leader.");
             lock.lock();
             try {
                 byte data[] = curatorFramework.getData().forPath(channelPath);
