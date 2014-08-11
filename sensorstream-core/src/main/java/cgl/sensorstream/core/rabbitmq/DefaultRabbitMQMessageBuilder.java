@@ -6,12 +6,17 @@ import com.rabbitmq.client.AMQP;
 import com.ss.commons.MessageBuilder;
 import com.ss.commons.MessageContext;
 import com.ss.rabbitmq.RabbitMQMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DefaultRabbitMQMessageBuilder implements MessageBuilder {
-    @Override
+    private static Logger LOG = LoggerFactory.getLogger(DefaultRabbitMQMessageBuilder.class);
+
     public List<Object> deSerialize(Object o) {
         List<Object> tuples = new ArrayList<Object>();
         if (o instanceof MessageContext) {
@@ -41,6 +46,13 @@ public class DefaultRabbitMQMessageBuilder implements MessageBuilder {
 
     @Override
     public Object serialize(Tuple tuple, Object o) {
-        return null;
+        byte []body = (byte[]) tuple.getValueByField("body");
+        String sensorId = (String) tuple.getValueByField(TransportConstants.SENSOR_ID);
+        String time = (String) tuple.getValueByField("time");
+        Map<String, Object> props = new HashMap<String, Object>();
+        props.put(TransportConstants.SENSOR_ID, sensorId);
+        props.put("time", time);
+        // System.out.println("Sending message" + motion);
+        return new RabbitMQMessage(null, null, null, new AMQP.BasicProperties.Builder().headers(props).build(), body);
     }
 }

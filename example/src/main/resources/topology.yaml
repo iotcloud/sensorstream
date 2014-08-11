@@ -4,7 +4,7 @@ spouts:
         broker: "rabbitmq"
         sensor: "wordcount"
         channel: "sentence"
-        fields: ["sentence", "sensorId", "time"]
+        fields: ["sentence", "sensorID", "time"]
         properties:
           ackMode: "auto"
 bolts:
@@ -12,5 +12,4 @@ bolts:
         broker: "rabbitmq"
         sensor: "wordcount"
         channel: "count"
-        fields: ["count", "sensorId", "time"]
-        messageBuilder:
+        fields: ["count", "sensorID", "time"]

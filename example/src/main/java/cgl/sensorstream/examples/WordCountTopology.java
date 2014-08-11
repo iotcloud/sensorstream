@@ -63,9 +63,9 @@ public class WordCountTopology {
         StreamComponents components = streamTopologyBuilder.buildComponents();
 
         builder.setSpout("spout", components.getSpouts().get("sentence"), 5);
-
         builder.setBolt("split", new SplitSentence(), 8).shuffleGrouping("spout");
         builder.setBolt("count", new WordCount(), 12).fieldsGrouping("split", new Fields("word"));
+
 
         Config conf = new Config();
         conf.setDebug(true);
