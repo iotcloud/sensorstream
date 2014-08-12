@@ -97,6 +97,8 @@ public class Utils {
                 destinationConfiguration.addProperty(entry.getKey(), entry.getValue());
             }
         }
+        destinationConfiguration.setSensorId(channel.getSensorId());
+        destinationConfiguration.setGrouped(channel.isGrouped());
         return destinationConfiguration;
     }
 
