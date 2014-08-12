@@ -54,7 +54,7 @@ public class ChannelListener {
         lock.lock();
         try {
             leaderSelector.close();
-            condition.notify();
+            condition.signal();
         } finally {
             lock.unlock();
         }

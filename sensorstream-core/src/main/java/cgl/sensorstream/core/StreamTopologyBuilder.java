@@ -31,6 +31,8 @@ public class StreamTopologyBuilder {
 
     private String zkServers;
 
+    private String zkRoot;
+
     public StreamTopologyBuilder() {
         spoutBuilders.put("rabbitmq", new RabbitMQSpoutBuilder());
         boltBuilders.put("rabbitmq", new RabbitMQBoltBuilder());
@@ -42,6 +44,7 @@ public class StreamTopologyBuilder {
         Map conf = Utils.readStreamConfig();
 
         zkServers = Configuration.getZkConnection(conf);
+        zkRoot = Configuration.getZkRoot(conf);
 
         Map spoutsMap = (Map) conf.get(SPOUTS);
         if (spoutsMap != null) {

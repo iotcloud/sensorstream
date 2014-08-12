@@ -71,7 +71,7 @@ public class WordCountTopology {
         builder.setBolt("sender", components.getBolts().get("count_send")).shuffleGrouping("count");
 
         Config conf = new Config();
-        conf.setDebug(true);
+        conf.setDebug(false);
 
         if (args != null && args.length > 0) {
             conf.setNumWorkers(3);

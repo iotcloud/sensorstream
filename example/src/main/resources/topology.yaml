@@ -1,4 +1,5 @@
 zk.servers: ["localhost:2181"]
+zk.root: "/iot/sensors"
 spouts:
     sentence_receive:
         broker: "rabbitmq"
