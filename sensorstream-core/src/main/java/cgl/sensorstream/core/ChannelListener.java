@@ -31,6 +31,13 @@ public class ChannelListener {
 
     private DestinationChangeListener dstListener;
 
+    private enum State {
+        RUN,
+        STOP
+    }
+
+    private State state = State.RUN;
+
     public ChannelListener(String channelPath, String connectionString, DestinationChangeListener dstListener) {
         try {
             this.channelPath = channelPath;
@@ -53,7 +60,7 @@ public class ChannelListener {
     public void stop() {
         lock.lock();
         try {
-            leaderSelector.close();
+            // leaderSelector.close();
             condition.signal();
         } finally {
             lock.unlock();
