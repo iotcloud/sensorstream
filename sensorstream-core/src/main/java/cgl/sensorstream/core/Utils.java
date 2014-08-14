@@ -102,4 +102,16 @@ public class Utils {
         return destinationConfiguration;
     }
 
+    public static String getSensorIdFromPath(String path) {
+        if (path.contains("/")) {
+            int index = path.lastIndexOf("/");
+            if (index != path.length() - 1) {
+                return path.substring(index + 1);
+            } else {
+                return null;
+            }
+        }
+        return null;
+    }
+
 }

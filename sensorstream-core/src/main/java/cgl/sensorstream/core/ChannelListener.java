@@ -75,7 +75,7 @@ public class ChannelListener {
                 TChannel channel = new TChannel();
                 SerializationUtils.createThriftFromBytes(data, channel);
                 if (dstListener != null) {
-                    dstListener.addDestination(channel.getName(), Utils.convertChannelToDestination(channel));
+                    dstListener.addDestination(channel.getSensorId(), Utils.convertChannelToDestination(channel));
                 }
                 condition.await();
                 if (dstListener != null) {

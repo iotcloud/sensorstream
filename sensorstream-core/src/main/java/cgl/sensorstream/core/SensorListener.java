@@ -90,7 +90,7 @@ public class SensorListener {
     }
 
     private void stopListener(String path) {
-        String sensorId = getSensorIdFromPath(path);
+        String sensorId = Utils.getSensorIdFromPath(path);
         ChannelListener listener = channelListeners.remove(sensorId);
         if (listener != null) {
             listener.stop();
@@ -107,7 +107,7 @@ public class SensorListener {
     }
 
     private void startListener(String path) {
-        String sensorId = getSensorIdFromPath(path);
+        String sensorId = Utils.getSensorIdFromPath(path);
         String channelPath = path + "/" + channel;
         try {
             if (client.checkExists().forPath(channelPath) != null) {
@@ -120,18 +120,6 @@ public class SensorListener {
             LOG.error(msg);
             throw new RuntimeException(msg);
         }
-    }
-
-    private String getSensorIdFromPath(String path) {
-        if (path.contains("/")) {
-            int index = path.lastIndexOf("/");
-            if (index != path.length() - 1) {
-                return path.substring(index + 1);
-            } else {
-                return null;
-            }
-        }
-        return null;
     }
 
     public void close() {

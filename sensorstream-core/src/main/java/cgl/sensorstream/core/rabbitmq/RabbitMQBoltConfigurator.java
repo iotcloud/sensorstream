@@ -70,7 +70,8 @@ public class RabbitMQBoltConfigurator implements BoltConfigurator {
         return new DestinationSelector() {
             @Override
             public String select(Tuple tuple) {
-                return "count";
+                Object o = tuple.getValueByField("sensorID");
+                return o.toString();
             }
         };
     }
