@@ -64,7 +64,7 @@ public class SensorListener {
                 switch (event.getType()) {
                     case CHILD_ADDED: {
                         LOG.info("Node added: {} for listening on channel {}", ZKPaths.getNodeFromPath(event.getData().getPath()), channel);
-                        startListener(event.getData().getPath());
+                        startListener(client, event.getData().getPath());
                         break;
                     } case CHILD_UPDATED: {
                         LOG.info("Node updated: " + ZKPaths.getNodeFromPath(event.getData().getPath()));
@@ -104,22 +104,27 @@ public class SensorListener {
         if (cache.getCurrentData().size() != 0) {
             for (ChildData data : cache.getCurrentData()) {
                 String path = data.getPath();
-                startListener(path);
+                startListener(client, path);
             }
         }
     }
 
-    private void startListener(String path) {
+    private void startListener(CuratorFramework client, String path) {
         String sensorId = Utils.getSensorIdFromPath(path);
         String channelPath = path + "/" + channel;
 
         try {
             Thread.sleep(100);
             if (client.checkExists().forPath(channelPath) != null) {
-                LOG.info("Starting listener on channel path {} for selecting the leader", channelPath);
-                ChannelListener channelListener = new ChannelListener(channelPath, connectionString, dstListener);
-                channelListener.start();
-                channelListeners.put(sensorId, channelListener);
+                TSensor sensor = new TSensor();
+                byte []data = client.getData().forPath(path);
+                SerializationUtils.createThriftFromBytes(data, sensor);
+                if (sensor.getState() != TSensorState.UN_DEPLOY) {
+                    LOG.info("Starting listener on channel path {} for selecting the leader", channelPath);
+                    ChannelListener channelListener = new ChannelListener(channelPath, connectionString, dstListener);
+                    channelListener.start();
+                    channelListeners.put(sensorId, channelListener);
+                }
             }
         } catch (Exception e) {
             String msg = "Failed to get the information about channel " + channelPath;
@@ -142,7 +147,7 @@ public class SensorListener {
                         String path = data.getPath();
                         String sensorId = Utils.getSensorIdFromPath(path);
                         if (!channelListeners.containsKey(sensorId)) {
-                            startListener(path);
+                            startListener(client, path);
                         }
                     }
                 }
