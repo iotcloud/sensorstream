@@ -63,7 +63,7 @@ public class SensorListener {
                 switch (event.getType()) {
                     case CHILD_ADDED: {
                         LOG.info("Node added: " + ZKPaths.getNodeFromPath(event.getData().getPath()));
-                        startListener(event.getData().getPath());
+                        startListener(client, event.getData().getPath());
                         break;
                     } case CHILD_UPDATED: {
                         LOG.info("Node updated: " + ZKPaths.getNodeFromPath(event.getData().getPath()));
@@ -91,8 +91,10 @@ public class SensorListener {
 
     private void stopListener(String path) {
         String sensorId = getSensorIdFromPath(path);
+
         ChannelListener listener = channelListeners.remove(sensorId);
         if (listener != null) {
+            LOG.info("Stopping the leader selector for sensorId {}", sensorId);
             listener.stop();
         }
     }
@@ -101,19 +103,26 @@ public class SensorListener {
         if (cache.getCurrentData().size() != 0) {
             for (ChildData data : cache.getCurrentData()) {
                 String path = data.getPath();
-                startListener(path);
+                String sensorId = getSensorIdFromPath(path);
+                LOG.info("Starting the leader selector for sensorId {}", sensorId);
+                startListener(client, path);
             }
         }
     }
 
-    private void startListener(String path) {
+    private void startListener(CuratorFramework client, String path) {
         String sensorId = getSensorIdFromPath(path);
         String channelPath = path + "/" + channel;
         try {
             if (client.checkExists().forPath(channelPath) != null) {
-                ChannelListener channelListener = new ChannelListener(channelPath, connectionString, dstListener);
-                channelListener.start();
-                channelListeners.put(sensorId, channelListener);
+                byte []data = client.getData().forPath(path);
+                TSensor sensor = new TSensor();
+                SerializationUtils.createThriftFromBytes(data, sensor);
+                if (sensor.getState() != null && sensor.getState() != TSensorState.UN_DEPLOY) {
+                    ChannelListener channelListener = new ChannelListener(channelPath, connectionString, dstListener);
+                    channelListener.start();
+                    channelListeners.put(sensorId, channelListener);
+                }
             }
         } catch (Exception e) {
             String msg = "Failed to get the information about channel " + channelPath;
