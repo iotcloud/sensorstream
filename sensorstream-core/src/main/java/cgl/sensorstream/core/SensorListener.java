@@ -1,5 +1,6 @@
 package cgl.sensorstream.core;
 
+import backtype.storm.log__init;
 import cgl.iotcloud.core.api.thrift.TSensor;
 import cgl.iotcloud.core.api.thrift.TSensorState;
 import cgl.iotcloud.core.utils.SerializationUtils;
@@ -62,7 +63,7 @@ public class SensorListener {
             public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
                 switch (event.getType()) {
                     case CHILD_ADDED: {
-                        LOG.info("Node added: " + ZKPaths.getNodeFromPath(event.getData().getPath()));
+                        LOG.info("Node added: {} for listening on channel {}", ZKPaths.getNodeFromPath(event.getData().getPath()), channel);
                         startListener(event.getData().getPath());
                         break;
                     } case CHILD_UPDATED: {
@@ -78,6 +79,8 @@ public class SensorListener {
             }
         };
         cache.getListenable().addListener(listener);
+        Thread t = new Thread(new UpdateWorker());
+        t.start();
     }
 
     private void updateChannelListener(PathChildrenCacheEvent event) throws TException {
@@ -109,8 +112,11 @@ public class SensorListener {
     private void startListener(String path) {
         String sensorId = Utils.getSensorIdFromPath(path);
         String channelPath = path + "/" + channel;
+
         try {
+            Thread.sleep(100);
             if (client.checkExists().forPath(channelPath) != null) {
+                LOG.info("Starting listener on channel path {} for selecting the leader", channelPath);
                 ChannelListener channelListener = new ChannelListener(channelPath, connectionString, dstListener);
                 channelListener.start();
                 channelListeners.put(sensorId, channelListener);
@@ -125,5 +131,27 @@ public class SensorListener {
     public void close() {
         CloseableUtils.closeQuietly(cache);
         CloseableUtils.closeQuietly(client);
+    }
+
+    private class UpdateWorker implements Runnable {
+        @Override
+        public void run() {
+            while(true) {
+                if (cache.getCurrentData().size() != 0) {
+                    for (ChildData data : cache.getCurrentData()) {
+                        String path = data.getPath();
+                        String sensorId = Utils.getSensorIdFromPath(path);
+                        if (!channelListeners.containsKey(sensorId)) {
+                            startListener(path);
+                        }
+                    }
+                }
+
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {
+                }
+            }
+        }
     }
 }
