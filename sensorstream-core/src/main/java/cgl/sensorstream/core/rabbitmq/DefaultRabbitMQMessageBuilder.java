@@ -50,7 +50,7 @@ public class DefaultRabbitMQMessageBuilder implements MessageBuilder {
     public Object serialize(Tuple tuple, Object o) {
         byte []body = (byte[]) tuple.getValueByField("body");
         Object sensorId = tuple.getValueByField(TransportConstants.SENSOR_ID);
-        String time = (String) tuple.getValueByField("time");
+        Object time = tuple.getValueByField("time");
         Map<String, Object> props = new HashMap<String, Object>();
         props.put(TransportConstants.SENSOR_ID, sensorId);
         props.put("time", time);
