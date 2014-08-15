@@ -37,6 +37,10 @@ public class SensorListener {
 
     private String root = "/iot/sensors";
 
+    private boolean run = true;
+
+    private Thread updater;
+
     public SensorListener(String sensor, String channel, String connectionString, DestinationChangeListener listener) {
         try {
             this.channel = channel;
@@ -79,8 +83,8 @@ public class SensorListener {
             }
         };
         cache.getListenable().addListener(listener);
-        Thread t = new Thread(new UpdateWorker());
-        t.start();
+        updater = new Thread(new UpdateWorker());
+        updater.start();
     }
 
     private void updateChannelListener(PathChildrenCacheEvent event) throws TException {
@@ -134,6 +138,12 @@ public class SensorListener {
     }
 
     public void close() {
+        run = false;
+        // wait until updater thread finishes
+        try {
+            updater.join();
+        } catch (InterruptedException ignore) {
+        }
         CloseableUtils.closeQuietly(cache);
         CloseableUtils.closeQuietly(client);
     }
@@ -141,7 +151,7 @@ public class SensorListener {
     private class UpdateWorker implements Runnable {
         @Override
         public void run() {
-            while(true) {
+            while(run) {
                 if (cache.getCurrentData().size() != 0) {
                     for (ChildData data : cache.getCurrentData()) {
                         String path = data.getPath();
