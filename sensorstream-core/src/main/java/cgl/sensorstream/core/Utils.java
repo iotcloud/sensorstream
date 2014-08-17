@@ -49,7 +49,7 @@ public class Utils {
         }
     }
 
-    public static Map findAndReadConfigFile(String name) {
+    public static Map readStreamConfig(String name) {
         return findAndReadConfigFile(name, true);
     }
 
@@ -59,7 +59,7 @@ public class Utils {
         if (confFile == null || confFile.equals("")) {
             conf = findAndReadConfigFile("topology.yaml", false);
         } else {
-            conf = findAndReadConfigFile(confFile);
+            conf = readStreamConfig(confFile);
         }
         return conf;
     }

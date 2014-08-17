@@ -33,6 +33,14 @@ public class StreamTopologyBuilder {
 
     private String zkRoot;
 
+    private String topologyFile = null;
+
+    public StreamTopologyBuilder(String topologyFile) {
+        this.topologyFile = topologyFile;
+        spoutBuilders.put("rabbitmq", new RabbitMQSpoutBuilder());
+        boltBuilders.put("rabbitmq", new RabbitMQBoltBuilder());
+    }
+
     public StreamTopologyBuilder() {
         spoutBuilders.put("rabbitmq", new RabbitMQSpoutBuilder());
         boltBuilders.put("rabbitmq", new RabbitMQBoltBuilder());
@@ -41,7 +49,12 @@ public class StreamTopologyBuilder {
     public StreamComponents buildComponents() {
         StreamComponents components = new StreamComponents();
 
-        Map conf = Utils.readStreamConfig();
+        Map conf;
+        if (topologyFile == null) {
+            conf = Utils.readStreamConfig();
+        } else {
+            conf = Utils.readStreamConfig(topologyFile);
+        }
 
         zkServers = Configuration.getZkConnection(conf);
         zkRoot = Configuration.getZkRoot(conf);

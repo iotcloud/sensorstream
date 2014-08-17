@@ -34,10 +34,10 @@ public class DefaultRabbitMQMessageBuilder implements MessageBuilder {
 
                 tuples.add(rabbitMQMessage.getBody());
                 if (sensorId != null) {
-                    tuples.add(sensorId);
+                    tuples.add(sensorId.toString());
                 }
                 if (time !=  null) {
-                    tuples.add(time);
+                    tuples.add(time.toString());
                 } else {
                     tuples.add(Long.toString(System.currentTimeMillis()));
                 }
