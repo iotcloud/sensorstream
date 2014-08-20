@@ -3,6 +3,8 @@ package cgl.sensorstream.core;
 import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.IRichSpout;
 import cgl.sensorstream.core.config.Configuration;
+import cgl.sensorstream.core.kafka.KafkaBoltBuilder;
+import cgl.sensorstream.core.kafka.KafkaSpoutBuilder;
 import cgl.sensorstream.core.rabbitmq.RabbitMQBoltBuilder;
 import cgl.sensorstream.core.rabbitmq.RabbitMQSpoutBuilder;
 import org.slf4j.Logger;
@@ -44,6 +46,9 @@ public class StreamTopologyBuilder {
     public StreamTopologyBuilder() {
         spoutBuilders.put("rabbitmq", new RabbitMQSpoutBuilder());
         boltBuilders.put("rabbitmq", new RabbitMQBoltBuilder());
+
+        spoutBuilders.put("kafka", new KafkaSpoutBuilder());
+        boltBuilders.put("kafka", new KafkaBoltBuilder());
     }
 
     public StreamComponents buildComponents() {
