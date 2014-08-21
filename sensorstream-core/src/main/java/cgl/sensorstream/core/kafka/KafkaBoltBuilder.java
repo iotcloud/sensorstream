@@ -8,11 +8,7 @@ import java.util.Map;
 
 public class KafkaBoltBuilder implements BoltBuilder {
     @Override
-    public IRichBolt build(String sensor, String channel,
-                           List<String> fields, String convertor,
-                           Map<String, Object> properties, String zkConnection) {
-
-
+    public IRichBolt build(String sensor, String channel, List<String> fields, String convertor, Map<String, Object> properties, String zkConnection) {
         return null;
     }
 }
