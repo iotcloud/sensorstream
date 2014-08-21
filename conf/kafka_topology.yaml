@@ -1,5 +1,6 @@
 zk.servers: ["localhost:2181"]
 zk.root: "/iot/sensors"
+zk.broker.root: ""
 spouts:
     sentence_receive:
         broker: "kafka"
