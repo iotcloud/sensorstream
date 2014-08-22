@@ -19,10 +19,7 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class SensorListener {
     private static Logger LOG = LoggerFactory.getLogger(SensorListener.class);
@@ -136,6 +133,29 @@ public class SensorListener {
         if (listener != null) {
             listener.stop();
         }
+        // remove the sensor from the groups if they are present
+        String removeGroup = null;
+        for (Map.Entry<String, List<String>> e : sensorsForGroup.entrySet()) {
+            Iterator<String> it = e.getValue().iterator();
+            while (it.hasNext()) {
+                String id = it.next();
+                if (id.equals(sensorId)) {
+                    it.remove();
+                }
+            }
+            if (e.getValue().size() == 0) {
+                removeGroup = e.getKey();
+            }
+        }
+
+        if (removeGroup != null) {
+            GroupedChannelListener groupedChannelListener = groupedChannelListeners.get(removeGroup);
+            if (groupedChannelListener != null) {
+                groupedChannelListener.stop();
+            }
+
+            sensorsForGroup.remove(removeGroup);
+        }
     }
 
     private void startListenerForChannel(CuratorFramework client, String path) {
@@ -154,7 +174,7 @@ public class SensorListener {
 
                 if (!tChannel.isGrouped()) {
                     if (sensor.getState() != TSensorState.UN_DEPLOY) {
-                        LOG.info("Starting listener on channel path {} for selecting the leader", channelPath);
+                        LOG.info("Starting single listener on channel path {} for selecting the leader", channelPath);
                         ChannelListener channelListener = new ChannelListener(channelPath, connectionString, dstListener);
                         channelListener.start();
                         singleChannelListeners.put(sensorId, channelListener);
@@ -168,6 +188,7 @@ public class SensorListener {
                             List<String> sensorIdsForGroup = this.sensorsForGroup.get(groupName);
                             sensorIdsForGroup.add(groupName);
                         } else {
+                            LOG.info("Starting group listener on channel path {} for selecting the leader", channelPath);
                             GroupedChannelListener groupedChannelListener = new GroupedChannelListener(parent, topologyName, tChannel.getSite(), tChannel.getSensor(), tChannel.getName(), connectionString, dstListener);
                             groupedChannelListener.start();
                             List<String> sensorIdsForGroup = new ArrayList<String>();
@@ -175,11 +196,6 @@ public class SensorListener {
                             sensorsForGroup.put(groupName, sensorIdsForGroup);
                             groupedChannelListeners.put(groupName, groupedChannelListener);
                         }
-
-                        LOG.info("Starting listener on channel path {} for selecting the leader", channelPath);
-                        ChannelListener channelListener = new ChannelListener(channelPath, connectionString, dstListener);
-                        channelListener.start();
-                        singleChannelListeners.put(sensorId, channelListener);
                     }
                 }
             }
