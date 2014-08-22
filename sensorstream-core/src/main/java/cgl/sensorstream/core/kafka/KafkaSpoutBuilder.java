@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class KafkaSpoutBuilder implements SpoutBuilder {
     @Override
-    public IRichSpout build(String sensor, String channel, List<String> fields, String convertor, Map<String, Object> properties, String zkConnection) {
+    public IRichSpout build(String topologyName, String sensor, String channel, List<String> fields, String convertor, Map<String, Object> properties, String zkConnection) {
         return null;
     }
 }
