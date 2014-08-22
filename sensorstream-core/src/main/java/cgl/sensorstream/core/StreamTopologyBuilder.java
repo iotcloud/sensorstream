@@ -187,22 +187,22 @@ public class StreamTopologyBuilder {
         return builder.build(sensorConf.toString(), channelConf.toString(), fields, messageBuilder, (Map<String, Object>) properties, zkServers);
     }
 
-    private IRichBolt buildBolt(Map conf, Map spoutConf) {
-        Object channelConf = spoutConf.get(CHANNEL);
+    private IRichBolt buildBolt(Map conf, Map boltConf) {
+        Object channelConf = boltConf.get(CHANNEL);
         if (!(channelConf instanceof String)) {
             String msg = "The channels should be a string";
             LOG.error(msg);
             throw new RuntimeException(msg);
         }
 
-        Object sensorConf = spoutConf.get(SENSOR);
+        Object sensorConf = boltConf.get(SENSOR);
         if (!(sensorConf instanceof String)) {
             String msg = "The sensor should be a string";
             LOG.error(msg);
             throw new RuntimeException(msg);
         }
 
-        Object filedsConf = spoutConf.get(FIELDS);
+        Object filedsConf = boltConf.get(FIELDS);
         if (!(filedsConf instanceof List)) {
             String msg = "The fields should be a string list";
             LOG.error(msg);
@@ -214,7 +214,7 @@ public class StreamTopologyBuilder {
             fields.add(o.toString());
         }
 
-        Object conversion = spoutConf.get(BUILDER);
+        Object conversion = boltConf.get(BUILDER);
         String messageBuilder = null;
         if (conversion != null) {
             if (!(conversion instanceof String)) {
@@ -225,14 +225,14 @@ public class StreamTopologyBuilder {
             messageBuilder = conversion.toString();
         }
 
-        Object broker = spoutConf.get(BROKER);
+        Object broker = boltConf.get(BROKER);
         if (!(broker instanceof String)) {
             String msg = "The conversion should specify a message converter";
             LOG.error(msg);
             throw new RuntimeException(msg);
         }
 
-        Object properties = spoutConf.get(PROPERTIES);
+        Object properties = boltConf.get(PROPERTIES);
         if (properties != null && !(properties instanceof Map)) {
             String msg = "The properties should be a map";
             LOG.error(msg);

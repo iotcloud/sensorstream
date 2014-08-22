@@ -5,6 +5,7 @@ spouts:
     sentence_receive:
         broker: "kafka"
         topic: ""
+        channel: ""
         fields: ["sentence", "sensorID", "time"]
         properties:
           ackMode: "auto"
@@ -12,6 +13,7 @@ bolts:
     count_send:
         broker: "kafka"
         topic: "count"
+        channel: ""
         fields: ["count", "sensorID", "time"]
         properties:
           ackMode: "auto"
