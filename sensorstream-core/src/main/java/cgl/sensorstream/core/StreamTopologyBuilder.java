@@ -37,6 +37,8 @@ public class StreamTopologyBuilder {
 
     private String topologyFile = null;
 
+    private String topologyName = "default";
+
     public StreamTopologyBuilder(String topologyFile) {
         this.topologyFile = topologyFile;
         spoutBuilders.put("rabbitmq", new RabbitMQSpoutBuilder());
@@ -63,6 +65,10 @@ public class StreamTopologyBuilder {
 
         zkServers = Configuration.getZkConnection(conf);
         zkRoot = Configuration.getZkRoot(conf);
+        topologyName = Configuration.getTopologyName(conf);
+        if (topologyName == null) {
+            topologyName = "default";
+        }
 
         Map spoutsMap = (Map) conf.get(SPOUTS);
         if (spoutsMap != null) {
@@ -184,7 +190,7 @@ public class StreamTopologyBuilder {
             throw new RuntimeException(msg);
         }
 
-        return builder.build(sensorConf.toString(), channelConf.toString(), fields, messageBuilder, (Map<String, Object>) properties, zkServers);
+        return builder.build(topologyName, sensorConf.toString(), channelConf.toString(), fields, messageBuilder, (Map<String, Object>) properties, zkServers);
     }
 
     private IRichBolt buildBolt(Map conf, Map boltConf) {
@@ -246,7 +252,7 @@ public class StreamTopologyBuilder {
             throw new RuntimeException(msg);
         }
 
-        return builder.build(sensorConf.toString(), channelConf.toString(), fields, messageBuilder, (Map<String, Object>) properties, zkServers);
+        return builder.build(topologyName, sensorConf.toString(), channelConf.toString(), fields, messageBuilder, (Map<String, Object>) properties, zkServers);
     }
 }
 

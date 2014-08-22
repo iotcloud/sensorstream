@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class RabbitMQBoltBuilder implements BoltBuilder {
     @Override
-    public IRichBolt build(String sensor, String channel, List<String> fields, String convertor, Map<String, Object> properties, String zkConnection) {
+    public IRichBolt build(String toplogyName, String sensor, String channel, List<String> fields, String convertor, Map<String, Object> properties, String zkConnection) {
         RabbitMQBoltConfigurator boltConfigurator = new RabbitMQBoltConfigurator(sensor, channel, convertor, fields, 64, zkConnection);
         ErrorReporter reporter = new ErrorReporter() {
             @Override

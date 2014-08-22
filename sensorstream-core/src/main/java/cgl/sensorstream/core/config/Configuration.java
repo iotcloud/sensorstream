@@ -2,7 +2,6 @@ package cgl.sensorstream.core.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.management.resources.agent_pt_BR;
 
 import java.util.List;
 import java.util.Map;
@@ -57,6 +56,13 @@ public class Configuration {
 
     public static String getChannelsPath(Map conf) {
         Object o = conf.get(ZK_CHANNELS_PATH);
+        return o.toString();
+    }
+
+    public static final String TOPOLOGY_NAME = "topology.name";
+
+    public static String getTopologyName(Map conf) {
+        Object o = conf.get(TOPOLOGY_NAME);
         return o.toString();
     }
 }

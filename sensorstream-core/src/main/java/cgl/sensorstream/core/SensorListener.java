@@ -1,9 +1,10 @@
 package cgl.sensorstream.core;
 
-import backtype.storm.log__init;
+import cgl.iotcloud.core.api.thrift.TChannel;
 import cgl.iotcloud.core.api.thrift.TSensor;
 import cgl.iotcloud.core.api.thrift.TSensorState;
 import cgl.iotcloud.core.utils.SerializationUtils;
+import com.google.common.base.Joiner;
 import com.ss.commons.DestinationChangeListener;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -18,7 +19,9 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SensorListener {
@@ -31,7 +34,11 @@ public class SensorListener {
 
     private String connectionString = null;
 
-    private Map<String, ChannelListener> channelListeners = new HashMap<String, ChannelListener>();
+    private Map<String, ChannelListener> singleChannelListeners = new HashMap<String, ChannelListener>();
+
+    private Map<String, GroupedChannelListener> groupedChannelListeners = new HashMap<String, GroupedChannelListener>();
+
+    private Map<String, List<String>> sensorsForGroup = new HashMap<String, List<String>>();
 
     private DestinationChangeListener dstListener;
 
@@ -41,8 +48,13 @@ public class SensorListener {
 
     private Thread updater;
 
-    public SensorListener(String sensor, String channel, String connectionString, DestinationChangeListener listener) {
+    private String topologyName;
+
+    private String parent = "/iot";
+
+    public SensorListener(String topologyName, String sensor, String channel, String connectionString, DestinationChangeListener listener) {
         try {
+            this.topologyName = topologyName;
             this.channel = channel;
             this.connectionString = connectionString;
             this.dstListener = listener;
@@ -60,6 +72,26 @@ public class SensorListener {
         }
     }
 
+    public void start() {
+        if (cache.getCurrentData().size() != 0) {
+            for (ChildData data : cache.getCurrentData()) {
+                String path = data.getPath();
+                startListenerForChannel(client, path);
+            }
+        }
+    }
+
+    public void close() {
+        run = false;
+        // wait until updater thread finishes
+        try {
+            updater.join();
+        } catch (InterruptedException ignore) {
+        }
+        CloseableUtils.closeQuietly(cache);
+        CloseableUtils.closeQuietly(client);
+    }
+
     private void addListener(PathChildrenCache cache) {
         // a PathChildrenCacheListener is optional. Here, it's used just to log changes
         PathChildrenCacheListener listener = new PathChildrenCacheListener() {
@@ -68,7 +100,7 @@ public class SensorListener {
                 switch (event.getType()) {
                     case CHILD_ADDED: {
                         LOG.info("Node added: {} for listening on channel {}", ZKPaths.getNodeFromPath(event.getData().getPath()), channel);
-                        startListener(client, event.getData().getPath());
+                        startListenerForChannel(client, event.getData().getPath());
                         break;
                     } case CHILD_UPDATED: {
                         LOG.info("Node updated: " + ZKPaths.getNodeFromPath(event.getData().getPath()));
@@ -93,41 +125,62 @@ public class SensorListener {
         SerializationUtils.createThriftFromBytes(data, sensor);
         if (sensor.getState() == TSensorState.UN_DEPLOY) {
             stopListener(event.getData().getPath());
+        } else if (sensor.getState() == TSensorState.DEPLOY) {
+            startListenerForChannel(client, event.getData().getPath());
         }
     }
 
     private void stopListener(String path) {
         String sensorId = Utils.getSensorIdFromPath(path);
-        ChannelListener listener = channelListeners.remove(sensorId);
+        ChannelListener listener = singleChannelListeners.remove(sensorId);
         if (listener != null) {
             listener.stop();
         }
     }
 
-    public void start() {
-        if (cache.getCurrentData().size() != 0) {
-            for (ChildData data : cache.getCurrentData()) {
-                String path = data.getPath();
-                startListener(client, path);
-            }
-        }
-    }
-
-    private void startListener(CuratorFramework client, String path) {
+    private void startListenerForChannel(CuratorFramework client, String path) {
         String sensorId = Utils.getSensorIdFromPath(path);
         String channelPath = path + "/" + channel;
 
         try {
-            Thread.sleep(100);
+            TSensor sensor = new TSensor();
+            byte []sensorData = client.getData().forPath(path);
+            SerializationUtils.createThriftFromBytes(sensorData, sensor);
+
             if (client.checkExists().forPath(channelPath) != null) {
-                TSensor sensor = new TSensor();
-                byte []data = client.getData().forPath(path);
-                SerializationUtils.createThriftFromBytes(data, sensor);
-                if (sensor.getState() != TSensorState.UN_DEPLOY) {
-                    LOG.info("Starting listener on channel path {} for selecting the leader", channelPath);
-                    ChannelListener channelListener = new ChannelListener(channelPath, connectionString, dstListener);
-                    channelListener.start();
-                    channelListeners.put(sensorId, channelListener);
+                byte []channelData = client.getData().forPath(channelPath);
+                TChannel tChannel = new TChannel();
+                SerializationUtils.createThriftFromBytes(channelData, tChannel);
+
+                if (!tChannel.isGrouped()) {
+                    if (sensor.getState() != TSensorState.UN_DEPLOY) {
+                        LOG.info("Starting listener on channel path {} for selecting the leader", channelPath);
+                        ChannelListener channelListener = new ChannelListener(channelPath, connectionString, dstListener);
+                        channelListener.start();
+                        singleChannelListeners.put(sensorId, channelListener);
+                    }
+                } else {
+                    if (sensor.getState() != TSensorState.UN_DEPLOY) {
+                        String groupName = getGroupName(topologyName, tChannel.getSite(), tChannel.getSensor(), tChannel.getName());
+
+                        // check weather we have a group
+                        if (groupedChannelListeners.containsKey(groupName)) {
+                            List<String> sensorIdsForGroup = this.sensorsForGroup.get(groupName);
+                            sensorIdsForGroup.add(groupName);
+                        } else {
+                            GroupedChannelListener groupedChannelListener = new GroupedChannelListener(parent, topologyName, tChannel.getSite(), tChannel.getSensor(), tChannel.getName(), connectionString, dstListener);
+                            groupedChannelListener.start();
+                            List<String> sensorIdsForGroup = new ArrayList<String>();
+                            sensorIdsForGroup.add(tChannel.getSensorId());
+                            sensorsForGroup.put(groupName, sensorIdsForGroup);
+                            groupedChannelListeners.put(groupName, groupedChannelListener);
+                        }
+
+                        LOG.info("Starting listener on channel path {} for selecting the leader", channelPath);
+                        ChannelListener channelListener = new ChannelListener(channelPath, connectionString, dstListener);
+                        channelListener.start();
+                        singleChannelListeners.put(sensorId, channelListener);
+                    }
                 }
             }
         } catch (Exception e) {
@@ -135,17 +188,6 @@ public class SensorListener {
             LOG.error(msg);
             throw new RuntimeException(msg);
         }
-    }
-
-    public void close() {
-        run = false;
-        // wait until updater thread finishes
-        try {
-            updater.join();
-        } catch (InterruptedException ignore) {
-        }
-        CloseableUtils.closeQuietly(cache);
-        CloseableUtils.closeQuietly(client);
     }
 
     private class UpdateWorker implements Runnable {
@@ -156,8 +198,8 @@ public class SensorListener {
                     for (ChildData data : cache.getCurrentData()) {
                         String path = data.getPath();
                         String sensorId = Utils.getSensorIdFromPath(path);
-                        if (!channelListeners.containsKey(sensorId)) {
-                            startListener(client, path);
+                        if (!singleChannelListeners.containsKey(sensorId)) {
+                            startListenerForChannel(client, path);
                         }
                     }
                 }
@@ -168,5 +210,9 @@ public class SensorListener {
                 }
             }
         }
+    }
+
+    private static String getGroupName(String topology, String site, String sensor, String channel) {
+        return Joiner.on(".").join(topology, site, sensor, channel);
     }
 }

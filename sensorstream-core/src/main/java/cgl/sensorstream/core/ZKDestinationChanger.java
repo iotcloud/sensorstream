@@ -14,15 +14,18 @@ public class ZKDestinationChanger implements DestinationChanger {
 
     private String zkConnectionString;
 
-    public ZKDestinationChanger(String sensor, String channel, String zkConnectionString) {
+    private String topologyName;
+
+    public ZKDestinationChanger(String topologyName, String sensor, String channel, String zkConnectionString) {
         this.sensor = sensor;
         this.channel = channel;
         this.zkConnectionString = zkConnectionString;
+        this.topologyName = topologyName;
     }
 
     @Override
     public void start() {
-        listener = new SensorListener(sensor, channel, zkConnectionString, dstListener);
+        listener = new SensorListener(topologyName, sensor, channel, zkConnectionString, dstListener);
         listener.start();
     }
 

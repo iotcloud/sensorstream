@@ -27,12 +27,15 @@ public class RabbitMQBoltConfigurator implements BoltConfigurator {
 
     private String zkConnectionString;
 
-    public RabbitMQBoltConfigurator(String sensor,
+    private String topologyName;
+
+    public RabbitMQBoltConfigurator(String toplogyName, String sensor,
                                     String channel,
                                     String messageBuilder,
                                     List<String> fields,
                                     int queueSize,
                                     String zkConnectionString) {
+        this.topologyName = toplogyName;
         this.sensor = sensor;
         this.channel = channel;
         this.messageBuilder = messageBuilder;
@@ -78,6 +81,6 @@ public class RabbitMQBoltConfigurator implements BoltConfigurator {
 
     @Override
     public DestinationChanger getDestinationChanger() {
-        return new ZKDestinationChanger(sensor, channel, zkConnectionString);
+        return new ZKDestinationChanger(topologyName, sensor, channel, zkConnectionString);
     }
 }

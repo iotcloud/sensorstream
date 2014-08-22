@@ -13,8 +13,8 @@ import java.util.Map;
 public class RabbitMQSpoutBuilder implements SpoutBuilder {
     private static Logger LOG = LoggerFactory.getLogger(RabbitMQSpoutBuilder.class);
 
-    public IRichSpout build(String sensor, String channel, List<String> fields, String convertor, Map<String, Object> properties, String zkConnection) {
-        RabbitMQSpoutConfigurator configurator = new RabbitMQSpoutConfigurator(sensor, channel, fields, convertor, 64, zkConnection);
+    public IRichSpout build(String topologyName, String sensor, String channel, List<String> fields, String convertor, Map<String, Object> properties, String zkConnection) {
+        RabbitMQSpoutConfigurator configurator = new RabbitMQSpoutConfigurator(topologyName, sensor, channel, fields, convertor, 64, zkConnection);
         ErrorReporter reporter = new ErrorReporter() {
             @Override
             public void reportError(Throwable throwable) {

@@ -25,9 +25,12 @@ public class RabbitMQSpoutConfigurator implements SpoutConfigurator {
 
     private String zkConnectionString;
 
-    public RabbitMQSpoutConfigurator(String sensor, String channel,
+    private String topologyName;
+
+    public RabbitMQSpoutConfigurator(String toplogyName, String sensor, String channel,
                                      List<String> fields, String messageBuilder,
                                      int queueSize, String zkConnectionString) {
+        this.topologyName = toplogyName;
         this.sensor = sensor;
         this.channel = channel;
         this.messageBuilder = messageBuilder;
@@ -62,6 +65,6 @@ public class RabbitMQSpoutConfigurator implements SpoutConfigurator {
 
     @Override
     public DestinationChanger getDestinationChanger() {
-        return new ZKDestinationChanger(sensor, channel, zkConnectionString);
+        return new ZKDestinationChanger(topologyName, sensor, channel, zkConnectionString);
     }
 }
