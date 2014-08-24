@@ -79,7 +79,7 @@ public class WordCountTopology {
         } else {
             conf.setMaxTaskParallelism(3);
             LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("word-count", conf, builder.createTopology());
+            cluster.submitTopology("wordcount", conf, builder.createTopology());
             Thread.sleep(20000);
             cluster.shutdown();
         }

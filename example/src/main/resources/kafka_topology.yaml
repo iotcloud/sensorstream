@@ -1,0 +1,19 @@
+zk.servers: ["localhost:2181"]
+zk.root: "/iot/sensors"
+topology.name: "wordcount"
+spouts:
+    sentence_receive:
+        broker: "kafka"
+        sensor: "wordcount"
+        channel: "sentence"
+        fields: ["sentence", "sensorID", "time"]
+        properties:
+          ackMode: "auto"
+bolts:
+    count_send:
+        broker: "kafka"
+        sensor: "wordcount"
+        channel: "count"
+        fields: ["count", "sensorID", "time"]
+        properties:
+          ackMode: "auto"
