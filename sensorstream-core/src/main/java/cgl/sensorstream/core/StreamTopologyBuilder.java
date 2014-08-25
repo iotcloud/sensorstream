@@ -39,14 +39,15 @@ public class StreamTopologyBuilder {
         this.topologyFile = topologyFile;
         spoutBuilders.put("rabbitmq", new RabbitMQSpoutBuilder());
         boltBuilders.put("rabbitmq", new RabbitMQBoltBuilder());
-    }
-
-    public StreamTopologyBuilder() {
-        spoutBuilders.put("rabbitmq", new RabbitMQSpoutBuilder());
-        boltBuilders.put("rabbitmq", new RabbitMQBoltBuilder());
 
         spoutBuilders.put("kafka", new KafkaSpoutBuilder());
         boltBuilders.put("kafka", new KafkaBoltBuilder());
+    }
+
+    public StreamTopologyBuilder() {
+        this(null);
+
+
     }
 
     public StreamComponents buildComponents() {

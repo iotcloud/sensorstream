@@ -1,10 +1,11 @@
 package cgl.sensorstream.core;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ComponentConfiguration {
+public class ComponentConfiguration implements Serializable {
     private TopologyConfiguration topologyConfiguration;
 
     private int queueSize = 64;
@@ -27,6 +28,9 @@ public class ComponentConfiguration {
         this.fields = fields;
         this.messageBuilder = messageBuilder;
         this.topologyConfiguration = topologyConfiguration;
+    }
+
+    public ComponentConfiguration() {
     }
 
     public void setQueueSize(int queueSize) {
@@ -64,4 +68,30 @@ public class ComponentConfiguration {
     public Map<String, String> getProperties() {
         return properties;
     }
+
+    public void setTopologyConfiguration(TopologyConfiguration topologyConfiguration) {
+        this.topologyConfiguration = topologyConfiguration;
+    }
+
+    public void setMessageBuilder(String messageBuilder) {
+        this.messageBuilder = messageBuilder;
+    }
+
+    public void setFields(List<String> fields) {
+        this.fields = fields;
+    }
+
+    public void setSensor(String sensor) {
+        this.sensor = sensor;
+    }
+
+    public void setChannel(String channel) {
+        this.channel = channel;
+    }
+
+    public void setProperties(Map<String, String> properties) {
+        this.properties = properties;
+    }
+
+
 }

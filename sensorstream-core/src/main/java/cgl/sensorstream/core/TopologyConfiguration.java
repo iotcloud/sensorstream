@@ -1,11 +1,16 @@
 package cgl.sensorstream.core;
 
-public class TopologyConfiguration {
+import java.io.Serializable;
+
+public class TopologyConfiguration implements Serializable  {
     private String zkConnectionString;
 
     private String topologyName;
 
     private String zkRoot;
+
+    public TopologyConfiguration() {
+    }
 
     public TopologyConfiguration(String topologyName, String zkConnectionString, String zkRoot) {
         this.topologyName = topologyName;
@@ -23,5 +28,17 @@ public class TopologyConfiguration {
 
     public String getZkRoot() {
         return zkRoot;
+    }
+
+    public void setZkConnectionString(String zkConnectionString) {
+        this.zkConnectionString = zkConnectionString;
+    }
+
+    public void setTopologyName(String topologyName) {
+        this.topologyName = topologyName;
+    }
+
+    public void setZkRoot(String zkRoot) {
+        this.zkRoot = zkRoot;
     }
 }
