@@ -18,6 +18,5 @@ bolts:
         channel: "count"
         fields: ["count", "sensorID", "time"]
         properties:
-          ackMode: "auto"
-          broker.zk.servers: ""
-          broker.zk.root: ""
+          request.required.acks: "false"
+          metadata.broker.list: "localhost:9090"
