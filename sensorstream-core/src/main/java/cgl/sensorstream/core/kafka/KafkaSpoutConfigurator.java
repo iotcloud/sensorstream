@@ -1,35 +1,73 @@
 package cgl.sensorstream.core.kafka;
 
 import backtype.storm.topology.OutputFieldsDeclarer;
+import backtype.storm.tuple.Fields;
+import cgl.sensorstream.core.ComponentConfiguration;
+import cgl.sensorstream.core.Utils;
+import cgl.sensorstream.core.ZKDestinationChanger;
+import cgl.sensorstream.core.rabbitmq.DefaultRabbitMQMessageBuilder;
 import com.ss.commons.DestinationChanger;
 import com.ss.commons.MessageBuilder;
 import com.ss.commons.SpoutConfigurator;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-public class KafkaSpoutConfigurator implements SpoutConfigurator{
+public class KafkaSpoutConfigurator implements SpoutConfigurator {
+    private int queueSize = 64;
+
+    private String messageBuilder;
+
+    private List<String> fields;
+
+    private String sensor;
+
+    private String channel;
+
+    private String zkConnectionString;
+
+    private String topologyName;
+
+    private ComponentConfiguration configuration;
+
+    public KafkaSpoutConfigurator(ComponentConfiguration configuration) {
+        this.topologyName = configuration.getTopologyConfiguration().getTopologyName();
+        this.sensor = configuration.getSensor();
+        this.channel = configuration.getChannel();
+        this.messageBuilder = configuration.getMessageBuilder();
+        this.fields = configuration.getFields();
+        this.queueSize = configuration.getQueueSize();
+        this.zkConnectionString = configuration.getTopologyConfiguration().getZkConnectionString();
+        this.configuration = configuration;
+    }
+
     @Override
     public MessageBuilder getMessageBuilder() {
-        return null;
+        if (messageBuilder != null) {
+            return (MessageBuilder) Utils.loadMessageBuilder(messageBuilder);
+        } else {
+            return new DefaultRabbitMQMessageBuilder();
+        }
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-
+        outputFieldsDeclarer.declare(new Fields(fields));
     }
 
     @Override
     public int queueSize() {
-        return 0;
+        return queueSize;
     }
 
     @Override
     public Map<String, String> getProperties() {
-        return null;
+        return configuration.getProperties();
     }
 
     @Override
     public DestinationChanger getDestinationChanger() {
-        return null;
+        return new ZKDestinationChanger(topologyName, sensor, channel, zkConnectionString);
     }
 }

@@ -2,6 +2,7 @@ package cgl.sensorstream.core.rabbitmq;
 
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
+import cgl.sensorstream.core.ComponentConfiguration;
 import cgl.sensorstream.core.Utils;
 import cgl.sensorstream.core.ZKDestinationChanger;
 import com.ss.commons.DestinationChanger;
@@ -27,16 +28,14 @@ public class RabbitMQSpoutConfigurator implements SpoutConfigurator {
 
     private String topologyName;
 
-    public RabbitMQSpoutConfigurator(String toplogyName, String sensor, String channel,
-                                     List<String> fields, String messageBuilder,
-                                     int queueSize, String zkConnectionString) {
-        this.topologyName = toplogyName;
-        this.sensor = sensor;
-        this.channel = channel;
-        this.messageBuilder = messageBuilder;
-        this.fields = fields;
-        this.queueSize = queueSize;
-        this.zkConnectionString = zkConnectionString;
+    public RabbitMQSpoutConfigurator(ComponentConfiguration configuration) {
+        this.topologyName = configuration.getTopologyConfiguration().getTopologyName();
+        this.sensor = configuration.getSensor();
+        this.channel = configuration.getChannel();
+        this.messageBuilder = configuration.getMessageBuilder();
+        this.fields = configuration.getFields();
+        this.queueSize = configuration.getQueueSize();
+        this.zkConnectionString = configuration.getTopologyConfiguration().getZkConnectionString();
     }
 
     @Override

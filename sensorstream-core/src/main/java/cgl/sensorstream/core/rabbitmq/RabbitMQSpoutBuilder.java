@@ -1,6 +1,7 @@
 package cgl.sensorstream.core.rabbitmq;
 
 import backtype.storm.topology.IRichSpout;
+import cgl.sensorstream.core.ComponentConfiguration;
 import cgl.sensorstream.core.SpoutBuilder;
 import com.ss.rabbitmq.ErrorReporter;
 import com.ss.rabbitmq.RabbitMQSpout;
@@ -13,8 +14,8 @@ import java.util.Map;
 public class RabbitMQSpoutBuilder implements SpoutBuilder {
     private static Logger LOG = LoggerFactory.getLogger(RabbitMQSpoutBuilder.class);
 
-    public IRichSpout build(String topologyName, String sensor, String channel, List<String> fields, String convertor, Map<String, Object> properties, String zkConnection) {
-        RabbitMQSpoutConfigurator configurator = new RabbitMQSpoutConfigurator(topologyName, sensor, channel, fields, convertor, 64, zkConnection);
+    public IRichSpout build(ComponentConfiguration configuration) {
+        RabbitMQSpoutConfigurator configurator = new RabbitMQSpoutConfigurator(configuration);
         ErrorReporter reporter = new ErrorReporter() {
             @Override
             public void reportError(Throwable throwable) {

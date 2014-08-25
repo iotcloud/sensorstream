@@ -7,5 +7,5 @@ import java.util.List;
 import java.util.Map;
 
 public interface BoltBuilder extends Serializable {
-    public IRichBolt build(String toplogyName, String sensor, String channel, List<String> fields, String convertor, Map<String, Object> properties, String zkConnection);
+    public IRichBolt build(ComponentConfiguration configuration);
 }

@@ -31,13 +31,9 @@ public class StreamTopologyBuilder {
 
     private Map<String, BoltBuilder> boltBuilders = new HashMap<String, BoltBuilder>();
 
-    private String zkServers;
-
-    private String zkRoot;
-
     private String topologyFile = null;
 
-    private String topologyName = "default";
+    private TopologyConfiguration topologyConfiguration;
 
     public StreamTopologyBuilder(String topologyFile) {
         this.topologyFile = topologyFile;
@@ -63,16 +59,18 @@ public class StreamTopologyBuilder {
             conf = Utils.readStreamConfig(topologyFile);
         }
 
-        zkServers = Configuration.getZkConnection(conf);
-        zkRoot = Configuration.getZkRoot(conf);
-        topologyName = Configuration.getTopologyName(conf);
+        String zkServers = Configuration.getZkConnection(conf);
+        String zkRoot = Configuration.getZkRoot(conf);
+        String topologyName = Configuration.getTopologyName(conf);
         if (topologyName == null) {
             topologyName = "default";
         }
+        topologyConfiguration = new TopologyConfiguration(topologyName, zkServers, zkRoot);
 
         Map spoutsMap = (Map) conf.get(SPOUTS);
         if (spoutsMap != null) {
             for (Object e : spoutsMap.entrySet()) {
+
                 if (e instanceof Map.Entry) {
                     Object name = ((Map.Entry) e).getKey();
                     Object spoutConf = ((Map.Entry) e).getValue();
@@ -89,7 +87,7 @@ public class StreamTopologyBuilder {
                         throw new RuntimeException(msg);
                     }
 
-                    IRichSpout spout = buildSpout(conf, (Map) spoutConf);
+                    IRichSpout spout = buildSpout(topologyConfiguration, (Map) spoutConf);
                     components.addSpout((String) name, spout);
                 } else {
                     String s = "The spout configuration should be a map";
@@ -118,7 +116,7 @@ public class StreamTopologyBuilder {
                         throw new RuntimeException(msg);
                     }
 
-                    IRichBolt bolt = buildBolt(conf, (Map) spoutConf);
+                    IRichBolt bolt = buildBolt(topologyConfiguration, (Map) spoutConf);
                     components.addBolt((String) name, bolt);
                 } else {
                     String s = "The spout configuration should be a map";
@@ -131,7 +129,7 @@ public class StreamTopologyBuilder {
         return components;
     }
 
-    private IRichSpout buildSpout(Map conf, Map spoutConf) {
+    private IRichSpout buildSpout(TopologyConfiguration topologyConfiguration, Map spoutConf) {
         Object channelConf = spoutConf.get(CHANNEL);
         if (!(channelConf instanceof String)) {
             String msg = "The channels should be a string";
@@ -190,10 +188,17 @@ public class StreamTopologyBuilder {
             throw new RuntimeException(msg);
         }
 
-        return builder.build(topologyName, sensorConf.toString(), channelConf.toString(), fields, messageBuilder, (Map<String, Object>) properties, zkServers);
+        ComponentConfiguration configuration = new ComponentConfiguration(topologyConfiguration, sensorConf.toString(),
+                channelConf.toString(), fields, messageBuilder);
+        if (properties != null) {
+            for (Object o : ((Map) properties).keySet()) {
+                configuration.addProperty(o.toString(), ((Map) properties).get(o).toString());
+            }
+        }
+        return builder.build(configuration);
     }
 
-    private IRichBolt buildBolt(Map conf, Map boltConf) {
+    private IRichBolt buildBolt(TopologyConfiguration topologyConfiguration, Map boltConf) {
         Object channelConf = boltConf.get(CHANNEL);
         if (!(channelConf instanceof String)) {
             String msg = "The channels should be a string";
@@ -251,8 +256,15 @@ public class StreamTopologyBuilder {
             LOG.error(msg);
             throw new RuntimeException(msg);
         }
+        ComponentConfiguration configuration = new ComponentConfiguration(topologyConfiguration, sensorConf.toString(),
+                channelConf.toString(), fields, messageBuilder);
+        if (properties != null) {
+            for (Object o : ((Map) properties).keySet()) {
+                configuration.addProperty(o.toString(), ((Map) properties).get(o).toString());
+            }
+        }
 
-        return builder.build(topologyName, sensorConf.toString(), channelConf.toString(), fields, messageBuilder, (Map<String, Object>) properties, zkServers);
+        return builder.build(configuration);
     }
 }
 

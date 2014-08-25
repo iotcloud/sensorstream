@@ -1,14 +1,14 @@
 package cgl.sensorstream.core.kafka;
 
 import backtype.storm.topology.IRichSpout;
+import cgl.sensorstream.core.ComponentConfiguration;
 import cgl.sensorstream.core.SpoutBuilder;
-
-import java.util.List;
-import java.util.Map;
+import com.ss.kafka.KafkaSpout;
 
 public class KafkaSpoutBuilder implements SpoutBuilder {
     @Override
-    public IRichSpout build(String topologyName, String sensor, String channel, List<String> fields, String convertor, Map<String, Object> properties, String zkConnection) {
-        return null;
+    public IRichSpout build(ComponentConfiguration configuration) {
+        KafkaSpoutConfigurator configurator = new KafkaSpoutConfigurator(configuration);
+        return new KafkaSpout(configurator);
     }
 }

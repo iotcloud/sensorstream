@@ -3,6 +3,7 @@ package cgl.sensorstream.core.rabbitmq;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
+import cgl.sensorstream.core.ComponentConfiguration;
 import cgl.sensorstream.core.Utils;
 import cgl.sensorstream.core.ZKDestinationChanger;
 import com.ss.commons.BoltConfigurator;
@@ -29,19 +30,14 @@ public class RabbitMQBoltConfigurator implements BoltConfigurator {
 
     private String topologyName;
 
-    public RabbitMQBoltConfigurator(String toplogyName, String sensor,
-                                    String channel,
-                                    String messageBuilder,
-                                    List<String> fields,
-                                    int queueSize,
-                                    String zkConnectionString) {
-        this.topologyName = toplogyName;
-        this.sensor = sensor;
-        this.channel = channel;
-        this.messageBuilder = messageBuilder;
-        this.fields = fields;
-        this.queueSize = queueSize;
-        this.zkConnectionString = zkConnectionString;
+    public RabbitMQBoltConfigurator(ComponentConfiguration configuration) {
+        this.topologyName = configuration.getTopologyConfiguration().getTopologyName();
+        this.sensor = configuration.getSensor();
+        this.channel = configuration.getChannel();
+        this.messageBuilder = configuration.getMessageBuilder();
+        this.fields = configuration.getFields();
+        this.queueSize = configuration.getQueueSize();
+        this.zkConnectionString = configuration.getTopologyConfiguration().getZkConnectionString();
     }
 
     @Override

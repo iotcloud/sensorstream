@@ -153,6 +153,12 @@
             </dependency>
 
             <dependency>
+                <groupId>storm-bcs</groupId>
+                <artifactId>storm-kafka</artifactId>
+                <version>${storm.bcs.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.fusesource.mqtt-client</groupId>
                 <artifactId>mqtt-client</artifactId>
                 <version>${mqtt.version}</version>
