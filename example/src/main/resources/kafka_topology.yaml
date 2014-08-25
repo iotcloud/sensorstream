@@ -9,6 +9,8 @@ spouts:
         fields: ["sentence", "sensorID", "time"]
         properties:
           ackMode: "auto"
+          broker.zk.servers: ""
+          broker.zk.root: ""
 bolts:
     count_send:
         broker: "kafka"
@@ -17,3 +19,5 @@ bolts:
         fields: ["count", "sensorID", "time"]
         properties:
           ackMode: "auto"
+          broker.zk.servers: ""
+          broker.zk.root: ""
