@@ -30,6 +30,8 @@ public class GroupedChannelListener {
 
     private DestinationChangeListener dstListener;
 
+    private String channelLeaderPath;
+
     private String channelPath;
 
     private enum State {
@@ -39,10 +41,11 @@ public class GroupedChannelListener {
 
     private State state = State.RUN;
 
-    public GroupedChannelListener(String parent, String topology, String site, String sensor,
+    public GroupedChannelListener(String channelPath, String parent, String topology, String site, String sensor,
                                   String channel, String connectionString, DestinationChangeListener dstListener) {
         try {
-            this.channelPath = Joiner.on("/").join(parent, topology, site, sensor, channel);
+            this.channelPath = channelPath;
+            this.channelLeaderPath = Joiner.on("/").join(parent, topology, site, sensor, channel);
             this.dstListener = dstListener;
             client = CuratorFrameworkFactory.newClient(connectionString, new ExponentialBackoffRetry(1000, 3));
             client.start();
@@ -55,11 +58,11 @@ public class GroupedChannelListener {
 
     public void start() {
         try {
-            if (client.checkExists().forPath(channelPath) == null) {
-                client.create().creatingParentsIfNeeded().forPath(channelPath);
+            if (client.checkExists().forPath(channelLeaderPath) == null) {
+                client.create().creatingParentsIfNeeded().forPath(channelLeaderPath);
             }
 
-            leaderSelector = new LeaderSelector(client, channelPath, new ChannelLeaderSelector());
+            leaderSelector = new LeaderSelector(client, channelLeaderPath, new ChannelLeaderSelector());
         } catch (Exception e) {
             LOG.error("Failed to access zookeeper", e);
         }
@@ -85,7 +88,7 @@ public class GroupedChannelListener {
     private class ChannelLeaderSelector extends LeaderSelectorListenerAdapter {
         @Override
         public void takeLeadership(CuratorFramework curatorFramework) throws Exception {
-            LOG.info(channelPath + " is the new leader.");
+            LOG.info(channelLeaderPath + " is the new leader.");
             lock.lock();
             try {
                 byte data[] = curatorFramework.getData().forPath(channelPath);
@@ -99,11 +102,11 @@ public class GroupedChannelListener {
                     dstListener.removeDestination(channel.getName());
                 }
             } catch (InterruptedException e) {
-                LOG.info(channelPath + " leader was interrupted.");
+                LOG.info(channelLeaderPath + " leader was interrupted.");
                 Thread.currentThread().interrupt();
             } finally {
                 lock.unlock();
-                LOG.info(channelPath + " leader relinquishing leadership.\n");
+                LOG.info(channelLeaderPath + " leader relinquishing leadership.\n");
             }
         }
     }

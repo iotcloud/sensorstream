@@ -189,7 +189,7 @@ public class SensorListener {
                             sensorIdsForGroup.add(groupName);
                         } else {
                             LOG.info("Starting group listener on channel path {} for selecting the leader", channelPath);
-                            GroupedChannelListener groupedChannelListener = new GroupedChannelListener(parent, topologyName, tChannel.getSite(), tChannel.getSensor(), tChannel.getName(), connectionString, dstListener);
+                            GroupedChannelListener groupedChannelListener = new GroupedChannelListener(channelPath, parent, topologyName, tChannel.getSite(), tChannel.getSensor(), tChannel.getName(), connectionString, dstListener);
                             groupedChannelListener.start();
                             List<String> sensorIdsForGroup = new ArrayList<String>();
                             sensorIdsForGroup.add(tChannel.getSensorId());

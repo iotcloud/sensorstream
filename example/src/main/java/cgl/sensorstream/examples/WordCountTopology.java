@@ -63,8 +63,8 @@ public class WordCountTopology {
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
 
-//        StreamTopologyBuilder streamTopologyBuilder = new StreamTopologyBuilder("kafka_topology.yaml");
-        StreamTopologyBuilder streamTopologyBuilder = new StreamTopologyBuilder();
+        StreamTopologyBuilder streamTopologyBuilder = new StreamTopologyBuilder("kafka_topology.yaml");
+//        StreamTopologyBuilder streamTopologyBuilder = new StreamTopologyBuilder();
         StreamComponents components = streamTopologyBuilder.buildComponents();
         builder.setSpout("spout", components.getSpouts().get("sentence_receive"), 1);
         builder.setBolt("split", new SplitSentence(), 1).shuffleGrouping("spout");

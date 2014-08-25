@@ -63,6 +63,10 @@ public class Configuration {
 
     public static String getTopologyName(Map conf) {
         Object o = conf.get(TOPOLOGY_NAME);
-        return o.toString();
+        if (o != null) {
+            return o.toString();
+        } else {
+            return null;
+        }
     }
 }
