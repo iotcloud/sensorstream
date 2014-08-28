@@ -48,7 +48,7 @@ public class KafkaBoltConfigurator implements BoltConfigurator {
         if (messageBuilder != null) {
             return (MessageBuilder) Utils.loadMessageBuilder(messageBuilder);
         } else {
-            return new DefaultRabbitMQMessageBuilder();
+            return new DefaultKafkaMessageBuilder();
         }
     }
 

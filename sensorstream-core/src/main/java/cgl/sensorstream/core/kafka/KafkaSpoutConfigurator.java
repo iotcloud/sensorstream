@@ -46,7 +46,7 @@ public class KafkaSpoutConfigurator implements SpoutConfigurator {
         if (messageBuilder != null) {
             return (MessageBuilder) Utils.loadMessageBuilder(messageBuilder);
         } else {
-            return new DefaultRabbitMQMessageBuilder();
+            return new DefaultKafkaMessageBuilder();
         }
     }
 
