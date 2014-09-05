@@ -106,6 +106,7 @@ public class SensorListener {
             @Override
             public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
                 int noOfChildren = client.getChildren().forPath(root + "/" + sensor).size();
+                int possibleListeners = (int) Math.ceil(noOfChildren / totalTasks);
                 switch (event.getType()) {
                     case CHILD_ADDED: {
                         LOG.info("Node added: {} for listening on channel {}", ZKPaths.getNodeFromPath(event.getData().getPath()), channel);
