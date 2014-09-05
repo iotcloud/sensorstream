@@ -34,12 +34,7 @@ public class GroupedChannelListener {
 
     private String channelPath;
 
-    private enum State {
-        RUN,
-        STOP
-    }
-
-    private State state = State.RUN;
+    private ChannelListenerState state = ChannelListenerState.INIT;
 
     public GroupedChannelListener(String channelPath, String parent, String topology, String site, String sensor,
                                   String channel, String connectionString, DestinationChangeListener dstListener) {
@@ -68,6 +63,7 @@ public class GroupedChannelListener {
         }
         leaderSelector.start();
         leaderSelector.autoRequeue();
+        state = ChannelListenerState.WAITING_FOR_LEADER;
     }
 
     public void stop() {
@@ -97,10 +93,12 @@ public class GroupedChannelListener {
                 if (dstListener != null) {
                     dstListener.addDestination(channel.getSensorId(), Utils.convertChannelToDestination(channel));
                 }
+                state = ChannelListenerState.LEADER;
                 condition.await();
                 if (dstListener != null) {
                     dstListener.removeDestination(channel.getName());
                 }
+                state = ChannelListenerState.LEADER_LEFT;
             } catch (InterruptedException e) {
                 LOG.info(channelLeaderPath + " leader was interrupted.");
                 Thread.currentThread().interrupt();
@@ -109,5 +107,9 @@ public class GroupedChannelListener {
                 LOG.info(channelLeaderPath + " leader relinquishing leadership.\n");
             }
         }
+    }
+
+    public ChannelListenerState getState() {
+        return state;
     }
 }

@@ -49,12 +49,15 @@ public class SensorListener {
 
     private String parent = "/iot";
 
+    private String sensor;
+
     public SensorListener(String topologyName, String sensor, String channel, String connectionString, DestinationChangeListener listener) {
         try {
             this.topologyName = topologyName;
             this.channel = channel;
             this.connectionString = connectionString;
             this.dstListener = listener;
+            this.sensor = sensor;
 
             client = CuratorFrameworkFactory.newClient(connectionString, new ExponentialBackoffRetry(1000, 3));
             client.start();
@@ -94,6 +97,7 @@ public class SensorListener {
         PathChildrenCacheListener listener = new PathChildrenCacheListener() {
             @Override
             public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
+                int noOfChildren = client.getChildren().forPath(root + "/" + sensor).size();
                 switch (event.getType()) {
                     case CHILD_ADDED: {
                         LOG.info("Node added: {} for listening on channel {}", ZKPaths.getNodeFromPath(event.getData().getPath()), channel);

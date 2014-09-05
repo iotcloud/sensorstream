@@ -31,12 +31,7 @@ public class ChannelListener {
 
     private DestinationChangeListener dstListener;
 
-    private enum State {
-        RUN,
-        STOP
-    }
-
-    private State state = State.RUN;
+    private ChannelListenerState state = ChannelListenerState.WAITING_FOR_LEADER;
 
     public ChannelListener(String channelPath, String connectionString, DestinationChangeListener dstListener) {
         try {
@@ -55,6 +50,7 @@ public class ChannelListener {
         leaderSelector = new LeaderSelector(client, channelPath, new ChannelLeaderSelector());
         leaderSelector.start();
         leaderSelector.autoRequeue();
+        state = ChannelListenerState.WAITING_FOR_LEADER;
     }
 
     public void stop() {
@@ -84,10 +80,12 @@ public class ChannelListener {
                 if (dstListener != null) {
                     dstListener.addDestination(channel.getSensorId(), Utils.convertChannelToDestination(channel));
                 }
+                state = ChannelListenerState.LEADER;
                 condition.await();
                 if (dstListener != null) {
                     dstListener.removeDestination(channel.getName());
                 }
+                state = ChannelListenerState.LEADER_LEFT;
             } catch (InterruptedException e) {
                 LOG.info(channelPath + " leader was interrupted.");
                 Thread.currentThread().interrupt();
@@ -96,5 +94,9 @@ public class ChannelListener {
                 LOG.info(channelPath + " leader relinquishing leadership.\n");
             }
         }
+    }
+
+    public ChannelListenerState getState() {
+        return state;
     }
 }
