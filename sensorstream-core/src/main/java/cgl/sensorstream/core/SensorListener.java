@@ -1,5 +1,6 @@
 package cgl.sensorstream.core;
 
+import backtype.storm.daemon.task__init;
 import cgl.iotcloud.core.api.thrift.TChannel;
 import cgl.iotcloud.core.api.thrift.TSensor;
 import cgl.iotcloud.core.api.thrift.TSensorState;
@@ -51,13 +52,20 @@ public class SensorListener {
 
     private String sensor;
 
-    public SensorListener(String topologyName, String sensor, String channel, String connectionString, DestinationChangeListener listener) {
+    private int taskIndex;
+
+    private int totalTasks;
+
+    public SensorListener(String topologyName, String sensor, String channel, String connectionString,
+                          DestinationChangeListener listener, int taskIndex, int totalTasks) {
         try {
             this.topologyName = topologyName;
             this.channel = channel;
             this.connectionString = connectionString;
             this.dstListener = listener;
             this.sensor = sensor;
+            this.taskIndex = taskIndex;
+            this.totalTasks = totalTasks;
 
             client = CuratorFrameworkFactory.newClient(connectionString, new ExponentialBackoffRetry(1000, 3));
             client.start();
