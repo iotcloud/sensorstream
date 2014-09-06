@@ -91,6 +91,7 @@ public class GroupedChannelListener {
     }
 
     public void stop() {
+        LOG.info("Stopping channel listener {}", channelPath);
         lock.lock();
         try {
             // leaderSelector.close();

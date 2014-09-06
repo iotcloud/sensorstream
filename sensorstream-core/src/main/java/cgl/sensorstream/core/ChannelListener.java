@@ -9,7 +9,6 @@ import org.apache.curator.framework.recipes.leader.LeaderSelector;
 import org.apache.curator.framework.recipes.leader.LeaderSelectorListenerAdapter;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.utils.CloseableUtils;
-import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,6 +82,7 @@ public class ChannelListener {
     }
 
     public void stop() {
+        LOG.info("Stopping channel listener {}", channelPath);
         lock.lock();
         try {
             // leaderSelector.close();
