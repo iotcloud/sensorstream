@@ -80,6 +80,6 @@ public class KafkaBoltConfigurator implements BoltConfigurator {
 
     @Override
     public DestinationChanger getDestinationChanger() {
-        return new ZKDestinationChanger(topologyName, sensor, channel, zkConnectionString);
+        return new ZKDestinationChanger(topologyName, sensor, channel, zkConnectionString, true);
     }
 }

@@ -58,8 +58,10 @@ public class SensorListener {
 
     private ChannelsState channelsState;
 
+    private boolean bolt;
+
     public SensorListener(String topologyName, String sensor, String channel, String connectionString,
-                          DestinationChangeListener listener, int taskIndex, int totalTasks) {
+                          DestinationChangeListener listener, int taskIndex, int totalTasks, boolean bolt) {
         try {
             this.topologyName = topologyName;
             this.channel = channel;
@@ -67,6 +69,7 @@ public class SensorListener {
             this.dstListener = listener;
             this.sensor = sensor;
             this.totalTasks = totalTasks;
+            this.bolt = bolt;
 
             client = CuratorFrameworkFactory.newClient(connectionString, new ExponentialBackoffRetry(1000, 3));
             client.start();
@@ -200,7 +203,7 @@ public class SensorListener {
                     if (sensor.getState() != TSensorState.UN_DEPLOY) {
                         LOG.info("Starting single listener on channel path {} for selecting the leader", channelPath);
                         channelsState.addChannel(totalTasks);
-                        ChannelListener channelListener = new ChannelListener(channelPath, connectionString, dstListener, channelsState);
+                        ChannelListener channelListener = new ChannelListener(channelPath, connectionString, dstListener, channelsState, bolt);
                         channelListener.start();
                         singleChannelListeners.put(sensorId, channelListener);
                     }
@@ -216,7 +219,7 @@ public class SensorListener {
                             LOG.info("Starting group listener on channel path {} for selecting the leader", channelPath);
                             GroupedChannelListener groupedChannelListener = new GroupedChannelListener(channelPath, parent,
                                     topologyName, tChannel.getSite(), tChannel.getSensor(),
-                                    tChannel.getName(), connectionString, dstListener, channelsState);
+                                    tChannel.getName(), connectionString, dstListener, channelsState, bolt);
                             groupedChannelListener.start();
                             List<String> sensorIdsForGroup = new ArrayList<String>();
                             sensorIdsForGroup.add(tChannel.getSensorId());

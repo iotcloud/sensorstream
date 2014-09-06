@@ -38,13 +38,18 @@ public class GroupedChannelListener {
 
     private ChannelsState channelsState;
 
+    private boolean bolt = false;
+
+    private TChannel channel;
+
     public GroupedChannelListener(String channelPath, String parent, String topology, String site, String sensor,
                                   String channel, String connectionString,
-                                  DestinationChangeListener dstListener, ChannelsState channelsState) {
+                                  DestinationChangeListener dstListener, ChannelsState channelsState, boolean bolt) {
         try {
             this.channelPath = channelPath;
             this.channelLeaderPath = Joiner.on("/").join(parent, topology, site, sensor, channel);
             this.dstListener = dstListener;
+            this.bolt = bolt;
             this.channelsState = channelsState;
             client = CuratorFrameworkFactory.newClient(connectionString, new ExponentialBackoffRetry(1000, 3));
             client.start();
@@ -55,26 +60,48 @@ public class GroupedChannelListener {
         }
     }
 
+    public GroupedChannelListener(String channelPath, String parent, String topology, String site, String sensor,
+                                  String channel, String connectionString,
+                                  DestinationChangeListener dstListener, ChannelsState channelsState) {
+        this(channelPath, parent, topology, site, sensor, channel, connectionString, dstListener, channelsState, false);
+    }
+
     public void start() {
         try {
-            if (client.checkExists().forPath(channelLeaderPath) == null) {
-                client.create().creatingParentsIfNeeded().forPath(channelLeaderPath);
+            if (!bolt) {
+                if (client.checkExists().forPath(channelLeaderPath) == null) {
+                    client.create().creatingParentsIfNeeded().forPath(channelLeaderPath);
+                }
+                leaderSelector = new LeaderSelector(client, channelLeaderPath, new ChannelLeaderSelector());
+                leaderSelector.start();
+                leaderSelector.autoRequeue();
+                state = ChannelListenerState.WAITING_FOR_LEADER;
+            } else {
+                byte data[] = client.getData().forPath(channelPath);
+                TChannel channel = new TChannel();
+                SerializationUtils.createThriftFromBytes(data, channel);
+                if (dstListener != null) {
+                    dstListener.addDestination(channel.getSensorId(), Utils.convertChannelToDestination(channel));
+                }
             }
-
-            leaderSelector = new LeaderSelector(client, channelLeaderPath, new ChannelLeaderSelector());
         } catch (Exception e) {
             LOG.error("Failed to access zookeeper", e);
         }
-        leaderSelector.start();
-        leaderSelector.autoRequeue();
-        state = ChannelListenerState.WAITING_FOR_LEADER;
+
     }
 
     public void stop() {
         lock.lock();
         try {
             // leaderSelector.close();
-            condition.signal();
+            if (!bolt) {
+                condition.signal();
+            } else {
+                if (dstListener != null && channel != null) {
+                    dstListener.removeDestination(channel.getName());
+                }
+                channelsState.removeLeader();
+            }
         } finally {
             lock.unlock();
         }
@@ -93,7 +120,7 @@ public class GroupedChannelListener {
             try {
                 if (channelsState.addLeader()) {
                     byte data[] = curatorFramework.getData().forPath(channelPath);
-                    TChannel channel = new TChannel();
+                    channel = new TChannel();
                     SerializationUtils.createThriftFromBytes(data, channel);
                     if (dstListener != null) {
                         dstListener.addDestination(channel.getSensorId(), Utils.convertChannelToDestination(channel));
