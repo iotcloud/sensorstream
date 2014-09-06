@@ -33,10 +33,14 @@ public class ChannelListener {
 
     private ChannelListenerState state = ChannelListenerState.WAITING_FOR_LEADER;
 
-    public ChannelListener(String channelPath, String connectionString, DestinationChangeListener dstListener) {
+    private ChannelsState channelsState;
+
+    public ChannelListener(String channelPath, String connectionString,
+                           DestinationChangeListener dstListener, ChannelsState channelsState) {
         try {
             this.channelPath = channelPath;
             this.dstListener = dstListener;
+            this.channelsState = channelsState;
             client = CuratorFrameworkFactory.newClient(connectionString, new ExponentialBackoffRetry(1000, 3));
             client.start();
         } catch (Exception e) {
@@ -74,18 +78,22 @@ public class ChannelListener {
             LOG.info(channelPath + " is the new leader.");
             lock.lock();
             try {
-                byte data[] = curatorFramework.getData().forPath(channelPath);
-                TChannel channel = new TChannel();
-                SerializationUtils.createThriftFromBytes(data, channel);
-                if (dstListener != null) {
-                    dstListener.addDestination(channel.getSensorId(), Utils.convertChannelToDestination(channel));
+                if (channelsState.addLeader()) {
+                    byte data[] = curatorFramework.getData().forPath(channelPath);
+                    TChannel channel = new TChannel();
+                    SerializationUtils.createThriftFromBytes(data, channel);
+                    if (dstListener != null) {
+                        dstListener.addDestination(channel.getSensorId(), Utils.convertChannelToDestination(channel));
+                    }
+
+                    state = ChannelListenerState.LEADER;
+                    condition.await();
+                    if (dstListener != null) {
+                        dstListener.removeDestination(channel.getName());
+                    }
+                    channelsState.removeLeader();
+                    state = ChannelListenerState.LEADER_LEFT;
                 }
-                state = ChannelListenerState.LEADER;
-                condition.await();
-                if (dstListener != null) {
-                    dstListener.removeDestination(channel.getName());
-                }
-                state = ChannelListenerState.LEADER_LEFT;
             } catch (InterruptedException e) {
                 LOG.info(channelPath + " leader was interrupted.");
                 Thread.currentThread().interrupt();

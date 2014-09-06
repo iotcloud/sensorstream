@@ -36,12 +36,16 @@ public class GroupedChannelListener {
 
     private ChannelListenerState state = ChannelListenerState.INIT;
 
+    private ChannelsState channelsState;
+
     public GroupedChannelListener(String channelPath, String parent, String topology, String site, String sensor,
-                                  String channel, String connectionString, DestinationChangeListener dstListener) {
+                                  String channel, String connectionString,
+                                  DestinationChangeListener dstListener, ChannelsState channelsState) {
         try {
             this.channelPath = channelPath;
             this.channelLeaderPath = Joiner.on("/").join(parent, topology, site, sensor, channel);
             this.dstListener = dstListener;
+            this.channelsState = channelsState;
             client = CuratorFrameworkFactory.newClient(connectionString, new ExponentialBackoffRetry(1000, 3));
             client.start();
         } catch (Exception e) {
@@ -87,18 +91,21 @@ public class GroupedChannelListener {
             LOG.info(channelLeaderPath + " is the new leader.");
             lock.lock();
             try {
-                byte data[] = curatorFramework.getData().forPath(channelPath);
-                TChannel channel = new TChannel();
-                SerializationUtils.createThriftFromBytes(data, channel);
-                if (dstListener != null) {
-                    dstListener.addDestination(channel.getSensorId(), Utils.convertChannelToDestination(channel));
+                if (channelsState.addLeader()) {
+                    byte data[] = curatorFramework.getData().forPath(channelPath);
+                    TChannel channel = new TChannel();
+                    SerializationUtils.createThriftFromBytes(data, channel);
+                    if (dstListener != null) {
+                        dstListener.addDestination(channel.getSensorId(), Utils.convertChannelToDestination(channel));
+                    }
+                    state = ChannelListenerState.LEADER;
+                    condition.await();
+                    if (dstListener != null) {
+                        dstListener.removeDestination(channel.getName());
+                    }
+                    channelsState.removeLeader();
+                    state = ChannelListenerState.LEADER_LEFT;
                 }
-                state = ChannelListenerState.LEADER;
-                condition.await();
-                if (dstListener != null) {
-                    dstListener.removeDestination(channel.getName());
-                }
-                state = ChannelListenerState.LEADER_LEFT;
             } catch (InterruptedException e) {
                 LOG.info(channelLeaderPath + " leader was interrupted.");
                 Thread.currentThread().interrupt();

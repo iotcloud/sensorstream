@@ -6,6 +6,7 @@ import cgl.iotcloud.core.api.thrift.TSensor;
 import cgl.iotcloud.core.api.thrift.TSensorState;
 import cgl.iotcloud.core.utils.SerializationUtils;
 import com.google.common.base.Joiner;
+import com.rabbitmq.client.impl.ChannelN;
 import com.ss.commons.DestinationChangeListener;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -19,6 +20,7 @@ import org.apache.curator.utils.ZKPaths;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.collection.mutable.ArrayBuilder;
 
 import java.util.*;
 
@@ -52,9 +54,9 @@ public class SensorListener {
 
     private String sensor;
 
-    private int taskIndex;
-
     private int totalTasks;
+
+    private ChannelsState channelsState;
 
     public SensorListener(String topologyName, String sensor, String channel, String connectionString,
                           DestinationChangeListener listener, int taskIndex, int totalTasks) {
@@ -64,11 +66,12 @@ public class SensorListener {
             this.connectionString = connectionString;
             this.dstListener = listener;
             this.sensor = sensor;
-            this.taskIndex = taskIndex;
             this.totalTasks = totalTasks;
 
             client = CuratorFrameworkFactory.newClient(connectionString, new ExponentialBackoffRetry(1000, 3));
             client.start();
+
+            channelsState = new ChannelsState();
 
             cache = new PathChildrenCache(client, root + "/" + sensor, true);
             cache.start(PathChildrenCache.StartMode.BUILD_INITIAL_CACHE);
@@ -96,6 +99,15 @@ public class SensorListener {
             updater.join();
         } catch (InterruptedException ignore) {
         }
+        for (ChannelListener listener : singleChannelListeners.values()) {
+            listener.stop();
+//            listener.close();
+        }
+        for (GroupedChannelListener listener : groupedChannelListeners.values()) {
+            listener.stop();
+//            listener.close();
+        }
+
         CloseableUtils.closeQuietly(cache);
         CloseableUtils.closeQuietly(client);
     }
@@ -105,8 +117,6 @@ public class SensorListener {
         PathChildrenCacheListener listener = new PathChildrenCacheListener() {
             @Override
             public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
-                int noOfChildren = client.getChildren().forPath(root + "/" + sensor).size();
-                int possibleListeners = (int) Math.ceil(noOfChildren / totalTasks);
                 switch (event.getType()) {
                     case CHILD_ADDED: {
                         LOG.info("Node added: {} for listening on channel {}", ZKPaths.getNodeFromPath(event.getData().getPath()), channel);
@@ -144,6 +154,7 @@ public class SensorListener {
         String sensorId = Utils.getSensorIdFromPath(path);
         ChannelListener listener = singleChannelListeners.remove(sensorId);
         if (listener != null) {
+            channelsState.removeChannel(totalTasks);
             listener.stop();
         }
         // remove the sensor from the groups if they are present
@@ -166,7 +177,7 @@ public class SensorListener {
             if (groupedChannelListener != null) {
                 groupedChannelListener.stop();
             }
-
+            channelsState.removeChannel(totalTasks);
             sensorsForGroup.remove(removeGroup);
         }
     }
@@ -188,7 +199,8 @@ public class SensorListener {
                 if (!tChannel.isGrouped()) {
                     if (sensor.getState() != TSensorState.UN_DEPLOY) {
                         LOG.info("Starting single listener on channel path {} for selecting the leader", channelPath);
-                        ChannelListener channelListener = new ChannelListener(channelPath, connectionString, dstListener);
+                        channelsState.addChannel(totalTasks);
+                        ChannelListener channelListener = new ChannelListener(channelPath, connectionString, dstListener, channelsState);
                         channelListener.start();
                         singleChannelListeners.put(sensorId, channelListener);
                     }
@@ -202,10 +214,13 @@ public class SensorListener {
                             sensorIdsForGroup.add(groupName);
                         } else {
                             LOG.info("Starting group listener on channel path {} for selecting the leader", channelPath);
-                            GroupedChannelListener groupedChannelListener = new GroupedChannelListener(channelPath, parent, topologyName, tChannel.getSite(), tChannel.getSensor(), tChannel.getName(), connectionString, dstListener);
+                            GroupedChannelListener groupedChannelListener = new GroupedChannelListener(channelPath, parent,
+                                    topologyName, tChannel.getSite(), tChannel.getSensor(),
+                                    tChannel.getName(), connectionString, dstListener, channelsState);
                             groupedChannelListener.start();
                             List<String> sensorIdsForGroup = new ArrayList<String>();
                             sensorIdsForGroup.add(tChannel.getSensorId());
+                            channelsState.addChannel(totalTasks);
                             sensorsForGroup.put(groupName, sensorIdsForGroup);
                             groupedChannelListeners.put(groupName, groupedChannelListener);
                         }
@@ -215,7 +230,7 @@ public class SensorListener {
         } catch (Exception e) {
             String msg = "Failed to get the information about channel " + channelPath;
             LOG.error(msg);
-            throw new RuntimeException(msg);
+            throw new RuntimeException(msg, e);
         }
     }
 
