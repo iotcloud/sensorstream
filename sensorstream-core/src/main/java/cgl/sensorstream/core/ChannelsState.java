@@ -40,7 +40,7 @@ public class ChannelsState {
         lock.lock();
         try {
             currentChannels--;
-            possibleChannels = (int) Math.ceil(currentChannels / totalTasks);
+            possibleChannels = (int) Math.ceil(((double)currentChannels) / totalTasks);
         } finally {
             lock.unlock();
         }
