@@ -40,19 +40,18 @@ public class ChannelListener {
     private TChannel channel;
 
     public ChannelListener(String channelPath, String connectionString,
-                           DestinationChangeListener dstListener, ChannelsState channelsState) {
-        this(channelPath, connectionString, dstListener, channelsState, false);
+                           DestinationChangeListener dstListener, ChannelsState channelsState, CuratorFramework client) {
+        this(channelPath, connectionString, dstListener, channelsState, false, client);
     }
 
     public ChannelListener(String channelPath, String connectionString,
-                           DestinationChangeListener dstListener, ChannelsState channelsState, boolean bolt) {
+                           DestinationChangeListener dstListener, ChannelsState channelsState, boolean bolt, CuratorFramework client) {
         try {
             this.channelPath = channelPath;
             this.dstListener = dstListener;
             this.channelsState = channelsState;
             this.bolt = bolt;
-            client = CuratorFrameworkFactory.newClient(connectionString, new ExponentialBackoffRetry(1000, 3));
-            client.start();
+            this.client = client;
         } catch (Exception e) {
             String msg = "Failed to create the listener for ZK path " + channelPath;
             LOG.error(msg);
@@ -103,7 +102,6 @@ public class ChannelListener {
 
     public void close() {
         CloseableUtils.closeQuietly(leaderSelector);
-        CloseableUtils.closeQuietly(client);
     }
 
     private class ChannelLeaderSelector extends LeaderSelectorListenerAdapter {

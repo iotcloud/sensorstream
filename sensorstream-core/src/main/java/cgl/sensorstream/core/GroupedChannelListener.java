@@ -5,10 +5,8 @@ import cgl.iotcloud.core.utils.SerializationUtils;
 import com.google.common.base.Joiner;
 import com.ss.commons.DestinationChangeListener;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.leader.LeaderSelector;
 import org.apache.curator.framework.recipes.leader.LeaderSelectorListenerAdapter;
-import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.utils.CloseableUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +44,7 @@ public class GroupedChannelListener {
 
     private boolean distributed;
 
-    public GroupedChannelListener(String channelPath, String parent, String topology, String site, String sensor,
+    public GroupedChannelListener(CuratorFramework client, String channelPath, String parent, String topology, String site, String sensor,
                                   String channel, String connectionString,
                                   DestinationChangeListener dstListener, ChannelsState channelsState, boolean bolt, boolean distributed) {
         try {
@@ -57,8 +55,7 @@ public class GroupedChannelListener {
             this.bolt = bolt;
             this.distributed = distributed;
             this.channelsState = channelsState;
-            client = CuratorFrameworkFactory.newClient(connectionString, new ExponentialBackoffRetry(1000, 3));
-            client.start();
+            this.client = client;
         } catch (Exception e) {
             String msg = "Failed to create the listener for ZK path " + channelPath;
             LOG.error(msg);
@@ -66,10 +63,10 @@ public class GroupedChannelListener {
         }
     }
 
-    public GroupedChannelListener(String channelPath, String parent, String topology, String site, String sensor,
+    public GroupedChannelListener(CuratorFramework client, String channelPath, String parent, String topology, String site, String sensor,
                                   String channel, String connectionString,
                                   DestinationChangeListener dstListener, ChannelsState channelsState) {
-        this(channelPath, parent, topology, site, sensor, channel, connectionString, dstListener, channelsState, false, false);
+        this(client, channelPath, parent, topology, site, sensor, channel, connectionString, dstListener, channelsState, false, false);
     }
 
     public void start() {
@@ -122,7 +119,6 @@ public class GroupedChannelListener {
 
     public void close() {
         CloseableUtils.closeQuietly(leaderSelector);
-        CloseableUtils.closeQuietly(client);
     }
 
     private class ChannelLeaderSelector extends LeaderSelectorListenerAdapter {

@@ -204,7 +204,7 @@ public class SensorListener {
                     if (sensor.getState() != TSensorState.UN_DEPLOY) {
                         LOG.info("Spout {}, starting single listener on channel path {} for selecting the leader", taskIndex, channelPath);
                         channelsState.addChannel(totalTasks);
-                        ChannelListener channelListener = new ChannelListener(channelPath, connectionString, dstListener, channelsState, bolt);
+                        ChannelListener channelListener = new ChannelListener(channelPath, connectionString, dstListener, channelsState, bolt, client);
                         channelListener.start();
                         singleChannelListeners.put(sensorId, channelListener);
                     }
@@ -220,7 +220,7 @@ public class SensorListener {
                             sensorIdsForGroup.add(tChannel.getSensorId());
                         } else {
                             LOG.info("Spout {}, starting group listener on channel path {} for selecting the leader", taskIndex, channelPath);
-                            GroupedChannelListener groupedChannelListener = new GroupedChannelListener(channelPath, parent,
+                            GroupedChannelListener groupedChannelListener = new GroupedChannelListener(client, channelPath, parent,
                                     topologyName, tChannel.getSite(), tChannel.getSensor(),
                                     tChannel.getName(), connectionString, dstListener, channelsState, bolt, distributed);
                             groupedChannelListener.addPath(tChannel.getSensorId());
