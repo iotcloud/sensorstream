@@ -2,6 +2,7 @@ package cgl.sensorstream.core;
 
 import cgl.iotcloud.core.api.thrift.TChannel;
 import cgl.sensorstream.core.config.Configuration;
+import com.google.common.base.Joiner;
 import com.ss.commons.DestinationConfiguration;
 import org.ho.yaml.Yaml;
 import org.slf4j.Logger;
@@ -114,4 +115,7 @@ public class Utils {
         return null;
     }
 
+    public static String getGroupName(String topology, String site, String sensor, String channel) {
+        return Joiner.on(".").join(topology, site, sensor, channel);
+    }
 }

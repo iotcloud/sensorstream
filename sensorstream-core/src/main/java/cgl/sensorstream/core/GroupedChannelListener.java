@@ -42,10 +42,13 @@ public class GroupedChannelListener {
 
     private TChannel channel;
 
+    private String groupName;
+
     public GroupedChannelListener(String channelPath, String parent, String topology, String site, String sensor,
                                   String channel, String connectionString,
                                   DestinationChangeListener dstListener, ChannelsState channelsState, boolean bolt) {
         try {
+            this.groupName = Utils.getGroupName(topology, site, sensor, channel);
             this.channelPath = channelPath;
             this.channelLeaderPath = Joiner.on("/").join(parent, topology, site, sensor, channel);
             this.dstListener = dstListener;
@@ -81,13 +84,19 @@ public class GroupedChannelListener {
                 TChannel channel = new TChannel();
                 SerializationUtils.createThriftFromBytes(data, channel);
                 if (dstListener != null) {
-                    dstListener.addDestination(channel.getSensorId(), Utils.convertChannelToDestination(channel));
+                    dstListener.addDestination(groupName, Utils.convertChannelToDestination(channel));
                 }
             }
         } catch (Exception e) {
             LOG.error("Failed to access zookeeper", e);
         }
 
+    }
+
+    public void addPath(String path) {
+        if (dstListener != null) {
+            dstListener.addPathToDestination(groupName, path);
+        }
     }
 
     public void stop() {

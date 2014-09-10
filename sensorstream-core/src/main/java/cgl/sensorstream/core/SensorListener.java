@@ -1,12 +1,9 @@
 package cgl.sensorstream.core;
 
-import backtype.storm.daemon.task__init;
 import cgl.iotcloud.core.api.thrift.TChannel;
 import cgl.iotcloud.core.api.thrift.TSensor;
 import cgl.iotcloud.core.api.thrift.TSensorState;
 import cgl.iotcloud.core.utils.SerializationUtils;
-import com.google.common.base.Joiner;
-import com.rabbitmq.client.impl.ChannelN;
 import com.ss.commons.DestinationChangeListener;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -20,7 +17,6 @@ import org.apache.curator.utils.ZKPaths;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.collection.mutable.ArrayBuilder;
 
 import java.util.*;
 
@@ -209,17 +205,20 @@ public class SensorListener {
                     }
                 } else {
                     if (sensor.getState() != TSensorState.UN_DEPLOY) {
-                        String groupName = getGroupName(topologyName, tChannel.getSite(), tChannel.getSensor(), tChannel.getName());
+                        String groupName = Utils.getGroupName(topologyName, tChannel.getSite(), tChannel.getSensor(), tChannel.getName());
 
                         // check weather we have a group
                         if (groupedChannelListeners.containsKey(groupName)) {
+                            GroupedChannelListener listener = groupedChannelListeners.get(groupName);
+                            listener.addPath(tChannel.getSensorId());
                             List<String> sensorIdsForGroup = this.sensorsForGroup.get(groupName);
-                            sensorIdsForGroup.add(groupName);
+                            sensorIdsForGroup.add(tChannel.getSensorId());
                         } else {
                             LOG.info("Starting group listener on channel path {} for selecting the leader", channelPath);
                             GroupedChannelListener groupedChannelListener = new GroupedChannelListener(channelPath, parent,
                                     topologyName, tChannel.getSite(), tChannel.getSensor(),
                                     tChannel.getName(), connectionString, dstListener, channelsState, bolt);
+                            groupedChannelListener.addPath(tChannel.getSensorId());
                             groupedChannelListener.start();
                             List<String> sensorIdsForGroup = new ArrayList<String>();
                             sensorIdsForGroup.add(tChannel.getSensorId());
@@ -268,7 +267,4 @@ public class SensorListener {
         return false;
     }
 
-    private static String getGroupName(String topology, String site, String sensor, String channel) {
-        return Joiner.on(".").join(topology, site, sensor, channel);
-    }
 }
