@@ -245,7 +245,7 @@ public class SensorListener {
                     for (ChildData data : cache.getCurrentData()) {
                         String path = data.getPath();
                         String sensorId = Utils.getSensorIdFromPath(path);
-                        if (!singleChannelListeners.containsKey(sensorId)) {
+                        if (!singleChannelListeners.containsKey(sensorId) && !groupContainsId(sensorId)) {
                             startListenerForChannel(client, path);
                         }
                     }
@@ -257,6 +257,15 @@ public class SensorListener {
                 }
             }
         }
+    }
+
+    private boolean groupContainsId(String id) {
+        for (Map.Entry<String, List<String>> a : sensorsForGroup.entrySet()) {
+            if (a.getValue().contains(id)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String getGroupName(String topology, String site, String sensor, String channel) {
