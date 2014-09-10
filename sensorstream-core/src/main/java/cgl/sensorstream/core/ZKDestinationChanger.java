@@ -22,21 +22,24 @@ public class ZKDestinationChanger implements DestinationChanger {
 
     private boolean bolt;
 
+    private boolean distributed;
+
     public ZKDestinationChanger(String topologyName, String sensor, String channel, String zkConnectionString) {
-        this(topologyName, sensor, channel, zkConnectionString, false);
+        this(topologyName, sensor, channel, zkConnectionString, false, false);
     }
 
-    public ZKDestinationChanger(String topologyName, String sensor, String channel, String zkConnectionString, boolean bolt) {
+    public ZKDestinationChanger(String topologyName, String sensor, String channel, String zkConnectionString, boolean bolt, boolean distributed) {
         this.sensor = sensor;
         this.channel = channel;
         this.zkConnectionString = zkConnectionString;
         this.topologyName = topologyName;
         this.bolt = bolt;
+        this.distributed = true;
     }
 
     @Override
     public void start() {
-        listener = new SensorListener(topologyName, sensor, channel, zkConnectionString, dstListener, taskIndex, totalTasks, bolt);
+        listener = new SensorListener(topologyName, sensor, channel, zkConnectionString, dstListener, taskIndex, totalTasks, bolt, distributed);
         listener.start();
     }
 

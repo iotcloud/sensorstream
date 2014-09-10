@@ -77,6 +77,6 @@ public class RabbitMQBoltConfigurator implements BoltConfigurator {
 
     @Override
     public DestinationChanger getDestinationChanger() {
-        return new ZKDestinationChanger(topologyName, sensor, channel, zkConnectionString, true);
+        return new ZKDestinationChanger(topologyName, sensor, channel, zkConnectionString, true, false);
     }
 }

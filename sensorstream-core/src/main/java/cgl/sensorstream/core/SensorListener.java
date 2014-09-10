@@ -56,8 +56,12 @@ public class SensorListener {
 
     private boolean bolt;
 
+    private int taskIndex;
+
+    private boolean distributed;
+
     public SensorListener(String topologyName, String sensor, String channel, String connectionString,
-                          DestinationChangeListener listener, int taskIndex, int totalTasks, boolean bolt) {
+                          DestinationChangeListener listener, int taskIndex, int totalTasks, boolean bolt, boolean distributed) {
         try {
             this.topologyName = topologyName;
             this.channel = channel;
@@ -66,7 +70,8 @@ public class SensorListener {
             this.sensor = sensor;
             this.totalTasks = totalTasks;
             this.bolt = bolt;
-
+            this.taskIndex = taskIndex;
+            this.distributed = distributed;
             client = CuratorFrameworkFactory.newClient(connectionString, new ExponentialBackoffRetry(1000, 3));
             client.start();
 
@@ -197,7 +202,7 @@ public class SensorListener {
 
                 if (!tChannel.isGrouped()) {
                     if (sensor.getState() != TSensorState.UN_DEPLOY) {
-                        LOG.info("Starting single listener on channel path {} for selecting the leader", channelPath);
+                        LOG.info("Spout {}, starting single listener on channel path {} for selecting the leader", taskIndex, channelPath);
                         channelsState.addChannel(totalTasks);
                         ChannelListener channelListener = new ChannelListener(channelPath, connectionString, dstListener, channelsState, bolt);
                         channelListener.start();
@@ -214,10 +219,10 @@ public class SensorListener {
                             List<String> sensorIdsForGroup = this.sensorsForGroup.get(groupName);
                             sensorIdsForGroup.add(tChannel.getSensorId());
                         } else {
-                            LOG.info("Starting group listener on channel path {} for selecting the leader", channelPath);
+                            LOG.info("Spout {}, starting group listener on channel path {} for selecting the leader", taskIndex, channelPath);
                             GroupedChannelListener groupedChannelListener = new GroupedChannelListener(channelPath, parent,
                                     topologyName, tChannel.getSite(), tChannel.getSensor(),
-                                    tChannel.getName(), connectionString, dstListener, channelsState, bolt);
+                                    tChannel.getName(), connectionString, dstListener, channelsState, bolt, distributed);
                             groupedChannelListener.addPath(tChannel.getSensorId());
                             groupedChannelListener.start();
                             List<String> sensorIdsForGroup = new ArrayList<String>();

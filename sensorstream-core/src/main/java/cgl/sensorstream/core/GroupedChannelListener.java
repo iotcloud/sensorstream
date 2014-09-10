@@ -44,15 +44,18 @@ public class GroupedChannelListener {
 
     private String groupName;
 
+    private boolean distributed;
+
     public GroupedChannelListener(String channelPath, String parent, String topology, String site, String sensor,
                                   String channel, String connectionString,
-                                  DestinationChangeListener dstListener, ChannelsState channelsState, boolean bolt) {
+                                  DestinationChangeListener dstListener, ChannelsState channelsState, boolean bolt, boolean distributed) {
         try {
             this.groupName = Utils.getGroupName(topology, site, sensor, channel);
             this.channelPath = channelPath;
             this.channelLeaderPath = Joiner.on("/").join(parent, topology, site, sensor, channel);
             this.dstListener = dstListener;
             this.bolt = bolt;
+            this.distributed = distributed;
             this.channelsState = channelsState;
             client = CuratorFrameworkFactory.newClient(connectionString, new ExponentialBackoffRetry(1000, 3));
             client.start();
@@ -66,12 +69,12 @@ public class GroupedChannelListener {
     public GroupedChannelListener(String channelPath, String parent, String topology, String site, String sensor,
                                   String channel, String connectionString,
                                   DestinationChangeListener dstListener, ChannelsState channelsState) {
-        this(channelPath, parent, topology, site, sensor, channel, connectionString, dstListener, channelsState, false);
+        this(channelPath, parent, topology, site, sensor, channel, connectionString, dstListener, channelsState, false, false);
     }
 
     public void start() {
         try {
-            if (!bolt) {
+            if (!bolt && !distributed) {
                 if (client.checkExists().forPath(channelLeaderPath) == null) {
                     client.create().creatingParentsIfNeeded().forPath(channelLeaderPath);
                 }

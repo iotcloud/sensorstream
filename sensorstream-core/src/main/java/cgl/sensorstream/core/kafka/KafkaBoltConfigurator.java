@@ -6,7 +6,6 @@ import backtype.storm.tuple.Tuple;
 import cgl.sensorstream.core.ComponentConfiguration;
 import cgl.sensorstream.core.Utils;
 import cgl.sensorstream.core.ZKDestinationChanger;
-import cgl.sensorstream.core.rabbitmq.DefaultRabbitMQMessageBuilder;
 import com.ss.commons.BoltConfigurator;
 import com.ss.commons.DestinationChanger;
 import com.ss.commons.DestinationSelector;
@@ -80,6 +79,6 @@ public class KafkaBoltConfigurator implements BoltConfigurator {
 
     @Override
     public DestinationChanger getDestinationChanger() {
-        return new ZKDestinationChanger(topologyName, sensor, channel, zkConnectionString, true);
+        return new ZKDestinationChanger(topologyName, sensor, channel, zkConnectionString, true, true);
     }
 }
