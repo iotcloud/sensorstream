@@ -202,9 +202,12 @@ public class SensorListener {
 
                 if (!tChannel.isGrouped()) {
                     if (sensor.getState() != TSensorState.UN_DEPLOY) {
+                        String groupName = Utils.getGroupName(topologyName, tChannel.getSite(), tChannel.getSensor(), channel, tChannel.getSensorId());
+
                         LOG.info("Spout {}, starting single listener on channel path {} for selecting the leader", taskIndex, channelPath);
                         channelsState.addChannel(totalTasks);
-                        ChannelListener channelListener = new ChannelListener(channelPath, connectionString, dstListener, channelsState, bolt, client);
+                        ChannelListener channelListener = new ChannelListener(channelPath, groupName, dstListener, channelsState, bolt, client);
+                        channelListener.addPath(tChannel.getSensorId());
                         channelListener.start();
                         singleChannelListeners.put(sensorId, channelListener);
                     }

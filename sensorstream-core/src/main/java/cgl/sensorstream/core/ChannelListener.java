@@ -39,12 +39,14 @@ public class ChannelListener {
 
     private TChannel channel;
 
-    public ChannelListener(String channelPath, String connectionString,
+    private String groupName;
+
+    public ChannelListener(String channelPath, String groupName,
                            DestinationChangeListener dstListener, ChannelsState channelsState, CuratorFramework client) {
-        this(channelPath, connectionString, dstListener, channelsState, false, client);
+        this(channelPath, groupName, dstListener, channelsState, false, client);
     }
 
-    public ChannelListener(String channelPath, String connectionString,
+    public ChannelListener(String channelPath, String groupName,
                            DestinationChangeListener dstListener, ChannelsState channelsState, boolean bolt, CuratorFramework client) {
         try {
             this.channelPath = channelPath;
@@ -52,6 +54,7 @@ public class ChannelListener {
             this.channelsState = channelsState;
             this.bolt = bolt;
             this.client = client;
+            this.groupName = groupName;
         } catch (Exception e) {
             String msg = "Failed to create the listener for ZK path " + channelPath;
             LOG.error(msg);
@@ -72,7 +75,7 @@ public class ChannelListener {
                 TChannel channel = new TChannel();
                 SerializationUtils.createThriftFromBytes(data, channel);
                 if (dstListener != null) {
-                    dstListener.addDestination(channel.getSensorId(), Utils.convertChannelToDestination(channel));
+                    dstListener.addDestination(groupName, Utils.convertChannelToDestination(channel));
                 }
             } catch (Exception e) {
                 LOG.error("Failed to start a destination listener", e);
@@ -100,6 +103,12 @@ public class ChannelListener {
         }
     }
 
+    public void addPath(String path) {
+        if (dstListener != null) {
+            dstListener.addPathToDestination(groupName, path);
+        }
+    }
+
     public void close() {
         CloseableUtils.closeQuietly(leaderSelector);
     }
@@ -115,13 +124,13 @@ public class ChannelListener {
                     channel = new TChannel();
                     SerializationUtils.createThriftFromBytes(data, channel);
                     if (dstListener != null) {
-                        dstListener.addDestination(channel.getSensorId(), Utils.convertChannelToDestination(channel));
+                        dstListener.addDestination(groupName, Utils.convertChannelToDestination(channel));
                     }
 
                     state = ChannelListenerState.LEADER;
                     condition.await();
                     if (dstListener != null) {
-                        dstListener.removeDestination(channel.getName());
+                        dstListener.removeDestination(groupName);
                     }
                     channelsState.removeLeader();
                     state = ChannelListenerState.LEADER_LEFT;

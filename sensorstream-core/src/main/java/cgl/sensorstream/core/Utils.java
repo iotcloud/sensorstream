@@ -118,4 +118,8 @@ public class Utils {
     public static String getGroupName(String topology, String site, String sensor, String channel) {
         return Joiner.on(".").join(topology, site, sensor, channel);
     }
+
+    public static String getGroupName(String topology, String site, String sensor, String channel, String sensorId) {
+        return Joiner.on(".").join(topology, site, sensor, channel, sensorId);
+    }
 }

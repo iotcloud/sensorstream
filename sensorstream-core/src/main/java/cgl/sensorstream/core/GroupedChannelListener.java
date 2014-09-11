@@ -108,7 +108,7 @@ public class GroupedChannelListener {
                 condition.signal();
             } else {
                 if (dstListener != null && channel != null) {
-                    dstListener.removeDestination(channel.getName());
+                    dstListener.removeDestination(groupName);
                 }
                 channelsState.removeLeader();
             }
@@ -132,7 +132,7 @@ public class GroupedChannelListener {
                     channel = new TChannel();
                     SerializationUtils.createThriftFromBytes(data, channel);
                     if (dstListener != null) {
-                        dstListener.addDestination(channel.getSensorId(), Utils.convertChannelToDestination(channel));
+                        dstListener.addDestination(groupName, Utils.convertChannelToDestination(channel));
                     }
                     state = ChannelListenerState.LEADER;
                     condition.await();
