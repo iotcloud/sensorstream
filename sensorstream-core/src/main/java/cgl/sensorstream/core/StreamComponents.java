@@ -11,6 +11,8 @@ public class StreamComponents {
 
     private Map<String, IRichBolt> bolts = new HashMap<String, IRichBolt>();
 
+    private Map conf;
+
     public void addSpout(String name, IRichSpout spout) {
         spouts.put(name, spout);
     }
@@ -25,5 +27,13 @@ public class StreamComponents {
 
     public Map<String, IRichBolt> getBolts() {
         return bolts;
+    }
+
+    public Map getConf() {
+        return conf;
+    }
+
+    public void setConf(Map conf) {
+        this.conf = conf;
     }
 }

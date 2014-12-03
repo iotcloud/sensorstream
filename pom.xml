@@ -12,6 +12,7 @@
         <!--<module>sensorstream-storm</module>-->
         <!--<module>sensors</module>-->
         <module>example</module>
+        <module>controller</module>
     </modules>
 
     <properties>

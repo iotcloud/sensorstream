@@ -26,6 +26,7 @@ public class StreamTopologyBuilder {
     public static final String BROKER = "broker";
     public static final String SENSOR = "sensor";
     public static final String PROPERTIES = "properties";
+    public static final String CONF = "conf";
 
     private Map<String, SpoutBuilder> spoutBuilders = new HashMap<String, SpoutBuilder>();
 
@@ -126,6 +127,9 @@ public class StreamTopologyBuilder {
                 }
             }
         }
+
+        Map configuration = (Map) conf.get(CONF);
+        components.setConf(configuration);
 
         return components;
     }
