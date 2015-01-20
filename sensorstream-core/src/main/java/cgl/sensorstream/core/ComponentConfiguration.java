@@ -20,6 +20,8 @@ public class ComponentConfiguration implements Serializable {
 
     private Map<String, String> properties = new HashMap<String, String>();
 
+    private String stream;
+
     public ComponentConfiguration(TopologyConfiguration topologyConfiguration,
                                   String sensor, String channel,
                                   List<String> fields, String messageBuilder) {
@@ -93,5 +95,11 @@ public class ComponentConfiguration implements Serializable {
         this.properties = properties;
     }
 
+    public String getStream() {
+        return stream;
+    }
 
+    public void setStream(String stream) {
+        this.stream = stream;
+    }
 }

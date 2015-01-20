@@ -28,6 +28,8 @@ public class RabbitMQSpoutConfigurator implements SpoutConfigurator {
 
     private String topologyName;
 
+    private String stream;
+
     public RabbitMQSpoutConfigurator(ComponentConfiguration configuration) {
         this.topologyName = configuration.getTopologyConfiguration().getTopologyName();
         this.sensor = configuration.getSensor();
@@ -36,6 +38,7 @@ public class RabbitMQSpoutConfigurator implements SpoutConfigurator {
         this.fields = configuration.getFields();
         this.queueSize = configuration.getQueueSize();
         this.zkConnectionString = configuration.getTopologyConfiguration().getZkConnectionString();
+        this.stream = configuration.getStream();
     }
 
     @Override
@@ -49,7 +52,11 @@ public class RabbitMQSpoutConfigurator implements SpoutConfigurator {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields(fields));
+        if (stream == null) {
+            outputFieldsDeclarer.declare(new Fields(fields));
+        } else {
+            outputFieldsDeclarer.declareStream(stream, new Fields(fields));
+        }
     }
 
     @Override

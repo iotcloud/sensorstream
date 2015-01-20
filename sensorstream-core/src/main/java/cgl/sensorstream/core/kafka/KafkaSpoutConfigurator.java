@@ -30,6 +30,8 @@ public class KafkaSpoutConfigurator implements SpoutConfigurator {
 
     private ComponentConfiguration configuration;
 
+    private String stream;
+
     public KafkaSpoutConfigurator(ComponentConfiguration configuration) {
         this.topologyName = configuration.getTopologyConfiguration().getTopologyName();
         this.sensor = configuration.getSensor();
@@ -39,6 +41,7 @@ public class KafkaSpoutConfigurator implements SpoutConfigurator {
         this.queueSize = configuration.getQueueSize();
         this.zkConnectionString = configuration.getTopologyConfiguration().getZkConnectionString();
         this.configuration = configuration;
+        this.stream = configuration.getStream();
     }
 
     @Override
@@ -52,7 +55,11 @@ public class KafkaSpoutConfigurator implements SpoutConfigurator {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields(fields));
+        if (stream == null) {
+            outputFieldsDeclarer.declare(new Fields(fields));
+        } else {
+            outputFieldsDeclarer.declareStream(stream, new Fields(fields));
+        }
     }
 
     @Override

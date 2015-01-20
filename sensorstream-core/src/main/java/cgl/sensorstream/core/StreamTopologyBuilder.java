@@ -24,6 +24,7 @@ public class StreamTopologyBuilder {
     public static final String FIELDS = "fields";
     public static final String BUILDER = "builder";
     public static final String BROKER = "broker";
+    public static final String STREAM = "stream";
     public static final String SENSOR = "sensor";
     public static final String PROPERTIES = "properties";
     public static final String CONF = "conf";
@@ -47,8 +48,6 @@ public class StreamTopologyBuilder {
 
     public StreamTopologyBuilder() {
         this(null);
-
-
     }
 
     public StreamComponents buildComponents() {
@@ -179,6 +178,17 @@ public class StreamTopologyBuilder {
             throw new RuntimeException(msg);
         }
 
+        String streamVal = null;
+        Object stream = spoutConf.get(STREAM);
+        if (stream != null) {
+            if (!(stream instanceof String)) {
+                String msg = "The stream should be a string";
+                LOG.error(msg);
+                throw new RuntimeException(msg);
+            }
+            streamVal = (String) stream;
+        }
+
         Object properties = spoutConf.get(PROPERTIES);
         if (properties != null && !(properties instanceof Map)) {
             String msg = "The properties should be a map";
@@ -195,6 +205,7 @@ public class StreamTopologyBuilder {
 
         ComponentConfiguration configuration = new ComponentConfiguration(topologyConfiguration, sensorConf.toString(),
                 channelConf.toString(), fields, messageBuilder);
+        configuration.setStream(streamVal);
         if (properties != null) {
             for (Object o : ((Map) properties).keySet()) {
                 configuration.addProperty(o.toString(), ((Map) properties).get(o).toString());
