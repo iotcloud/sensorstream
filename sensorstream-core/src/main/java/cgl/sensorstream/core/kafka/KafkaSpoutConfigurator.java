@@ -76,4 +76,9 @@ public class KafkaSpoutConfigurator implements SpoutConfigurator {
     public DestinationChanger getDestinationChanger() {
         return new ZKDestinationChanger(topologyName, sensor, channel, zkConnectionString, false, true);
     }
+
+    @Override
+    public String getStream() {
+        return stream;
+    }
 }

@@ -73,4 +73,9 @@ public class RabbitMQSpoutConfigurator implements SpoutConfigurator {
     public DestinationChanger getDestinationChanger() {
         return new ZKDestinationChanger(topologyName, sensor, channel, zkConnectionString);
     }
+
+    @Override
+    public String getStream() {
+        return stream;
+    }
 }
